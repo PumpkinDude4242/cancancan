@@ -13,18 +13,15 @@
 
     <title>CAN Clicker - Coupe d'Afrique des Nations</title>
 
-    <!-- Préchargement des ressources critiques -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="stylesheet" href="style.css">
-
-    <!-- Favicons (à remplacer avec de vrais assets) -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body data-background="stadium">
+
     <!-- ============================================= -->
     <!-- ÉCRAN DE CHARGEMENT                          -->
     <!-- ============================================= -->
-    <div id="loading-screen" class="loading-screen">
+    <div id="loading-screen">
         <div class="loading-content">
             <div class="loading-trophy">🏆</div>
             <h1>CAN CLICKER</h1>
@@ -36,7 +33,7 @@
     </div>
 
     <!-- ============================================= -->
-    <!-- HEADER / BARRE DE STATUT                     -->
+    <!-- HEADER MINIMAL (Fixed)                       -->
     <!-- ============================================= -->
     <header id="header">
         <div class="header-left">
@@ -58,90 +55,41 @@
     </header>
 
     <!-- ============================================= -->
-    <!-- CONTENEUR PRINCIPAL DU JEU                   -->
+    <!-- MONDE DU JEU (Scrollable horizontalement)    -->
     <!-- ============================================= -->
-    <main id="game-container">
-        <!-- Zone des barres (scrollable virtuellement via caméra) -->
-        <div id="bars-viewport">
-            <div id="bars-container">
-                <!-- Les barres seront générées dynamiquement par JS -->
+    <div id="world-viewport">
+        <div id="world-container">
+            <!-- Sol / Base où les barres sont posées -->
+            <div id="ground">
+                <!-- Les barres seront générées dynamiquement ici -->
             </div>
         </div>
+    </div>
 
-        <!-- Zone des "gouttes" pour équipes à la traîne -->
+    <!-- ============================================= -->
+    <!-- UI FIXE (Overlay)                            -->
+    <!-- ============================================= -->
+    <div id="game-ui">
+        <!-- Conteneur des gouttes (pays hors écran) -->
         <div id="drops-container">
             <!-- Les gouttes seront générées dynamiquement -->
         </div>
-    </main>
 
-    <!-- ============================================= -->
-    <!-- BARRE DE STAMINA                             -->
-    <!-- ============================================= -->
-    <div id="stamina-bar-container">
-        <div class="stamina-label">
-            <span>⚡ ÉNERGIE</span>
-            <span id="stamina-text">100%</span>
-        </div>
-        <div id="stamina-bar">
-            <div id="stamina-fill"></div>
-        </div>
-        <div id="stamina-warning" class="hidden">
-            ⏳ Récupération en cours...
+        <!-- Indicateur du leader -->
+        <div id="leader-indicator">
+            <span class="leader-crown">👑</span>
+            <span id="leader-name">-</span>
+            <span id="leader-score">0</span>
         </div>
     </div>
 
     <!-- ============================================= -->
-    <!-- PANNEAU DE SÉLECTION D'ÉQUIPE               -->
+    <!-- EFFETS DE CLIC (+1 flottants)               -->
     <!-- ============================================= -->
-    <div id="team-selector" class="hidden">
-        <div class="selector-header">
-            <h2>🌍 Choisissez votre équipe</h2>
-            <p>Sélectionnez le pays que vous souhaitez soutenir</p>
-        </div>
-        <div id="teams-grid">
-            <!-- Généré dynamiquement -->
-        </div>
-    </div>
+    <div id="click-effects"></div>
 
     <!-- ============================================= -->
-    <!-- BOUTON DE CLIC (équipe sélectionnée)        -->
-    <!-- ============================================= -->
-    <div id="click-zone" class="hidden">
-        <button id="click-button" disabled>
-            <div class="click-flag" id="click-flag"></div>
-            <div class="click-info">
-                <span class="click-team-name" id="click-team-name">Sélectionnez</span>
-                <span class="click-score" id="click-score">0</span>
-            </div>
-        </button>
-        <button id="change-team-btn" title="Changer d'équipe">🔄</button>
-    </div>
-
-    <!-- ============================================= -->
-    <!-- CONTENEUR DES ANIMATIONS DE CLIC (+1)       -->
-    <!-- ============================================= -->
-    <div id="click-effects-container"></div>
-
-    <!-- ============================================= -->
-    <!-- PANNEAU DU CLASSEMENT (toggle)              -->
-    <!-- ============================================= -->
-    <div id="ranking-panel" class="hidden">
-        <div class="panel-header">
-            <h2>🏅 Classement</h2>
-            <button id="close-ranking" class="close-btn">✕</button>
-        </div>
-        <div id="ranking-list">
-            <!-- Généré dynamiquement -->
-        </div>
-    </div>
-
-    <!-- Bouton pour ouvrir le classement -->
-    <button id="ranking-toggle" title="Voir le classement">
-        🏅
-    </button>
-
-    <!-- ============================================= -->
-    <!-- NOTIFICATION TOAST                           -->
+    <!-- NOTIFICATIONS TOAST                          -->
     <!-- ============================================= -->
     <div id="toast-container"></div>
 
@@ -149,15 +97,13 @@
     <!-- OVERLAY COMBO MODE                           -->
     <!-- ============================================= -->
     <div id="combo-overlay" class="hidden">
-        <span class="combo-text">🔥 COMBO MODE 🔥</span>
+        <span class="combo-text">🔥 COMBO 🔥</span>
     </div>
 
     <!-- ============================================= -->
     <!-- SCRIPTS                                      -->
     <!-- ============================================= -->
-    <!-- Socket.io depuis le serveur -->
     <script src="/socket.io/socket.io.js"></script>
-    <!-- Logique client -->
     <script src="client.js"></script>
 </body>
 </html>

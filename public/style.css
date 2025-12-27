@@ -1,6 +1,7 @@
 /**
- * CAN Clicker Game - Styles
- * Design mobile-first, responsive, avec animations fluides
+ * CAN Clicker Game - Styles v2
+ * Nouvelle UX: Clic direct sur barres, caméra verticale, système de gouttes
+ * Mobile-first, animations GPU-accelerated
  */
 
 /* ============================================= */
@@ -16,30 +17,32 @@
     --color-darker: #0f0f1a;
     --color-light: #ffffff;
 
-    /* Couleurs de background selon niveau */
+    /* Backgrounds dynamiques */
     --bg-stadium: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     --bg-sky: linear-gradient(180deg, #0f3460 0%, #1e5f74 50%, #5aa9e6 100%);
     --bg-space: linear-gradient(180deg, #0d1b2a 0%, #1b263b 50%, #415a77 100%);
     --bg-moon: linear-gradient(180deg, #000000 0%, #1a1a2e 30%, #2d2d44 60%, #4a4a6a 100%);
 
-    /* Effets néon pour match en direct */
+    /* Effet néon match en direct */
     --neon-green: #00ff88;
     --neon-glow: 0 0 10px var(--neon-green), 0 0 20px var(--neon-green), 0 0 40px var(--neon-green);
 
     /* Typographie */
-    --font-main: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    --font-main: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-display: 'Impact', 'Arial Black', sans-serif;
 
     /* Dimensions */
-    --header-height: 60px;
-    --stamina-height: 60px;
-    --bar-width: 50px;
-    --bar-gap: 15px;
+    --header-height: 50px;
+    --bar-width: 60px;
+    --bar-gap: 8px;
+    --bar-min-height: 40px;
+    --drop-size: 44px;
+    --ground-height: 20px;
 
     /* Transitions */
     --transition-fast: 0.15s ease;
     --transition-normal: 0.3s ease;
-    --transition-slow: 0.5s ease;
+    --transition-camera: 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 /* ============================================= */
@@ -54,7 +57,7 @@
 html, body {
     height: 100%;
     overflow: hidden;
-    touch-action: manipulation; /* Évite le zoom double-tap */
+    touch-action: pan-x; /* Autorise scroll horizontal, bloque vertical */
 }
 
 body {
@@ -63,71 +66,62 @@ body {
     color: var(--color-light);
     transition: background 1s ease;
     -webkit-tap-highlight-color: transparent;
+    user-select: none;
 }
 
-/* Backgrounds dynamiques selon le score */
+/* Backgrounds dynamiques */
 body[data-background="stadium"] { background: var(--bg-stadium); }
 body[data-background="sky"] { background: var(--bg-sky); }
 body[data-background="space"] { background: var(--bg-space); }
 body[data-background="moon"] { background: var(--bg-moon); }
 
-/* Étoiles pour le background space/moon */
+/* Étoiles pour space/moon */
 body[data-background="space"]::before,
 body[data-background="moon"]::before {
     content: '';
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     background-image:
         radial-gradient(2px 2px at 20px 30px, white, transparent),
         radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
         radial-gradient(1px 1px at 90px 40px, white, transparent),
-        radial-gradient(2px 2px at 160px 120px, rgba(255,255,255,0.9), transparent),
-        radial-gradient(1px 1px at 230px 80px, white, transparent);
-    background-size: 250px 150px;
-    animation: twinkle 4s ease-in-out infinite alternate;
+        radial-gradient(2px 2px at 160px 120px, rgba(255,255,255,0.9), transparent);
+    background-size: 200px 150px;
+    animation: twinkle 3s ease-in-out infinite alternate;
     pointer-events: none;
     z-index: 0;
 }
 
 @keyframes twinkle {
-    0% { opacity: 0.5; }
+    0% { opacity: 0.4; }
     100% { opacity: 1; }
 }
 
-/* Lune pour le niveau moon */
 body[data-background="moon"]::after {
     content: '🌙';
     position: fixed;
-    top: 10%;
-    right: 10%;
-    font-size: 80px;
-    opacity: 0.8;
-    animation: float 6s ease-in-out infinite;
+    top: 80px;
+    right: 20px;
+    font-size: 60px;
+    opacity: 0.7;
+    animation: float 5s ease-in-out infinite;
     pointer-events: none;
     z-index: 0;
 }
 
 @keyframes float {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
+    50% { transform: translateY(-15px); }
 }
 
-.hidden {
-    display: none !important;
-}
+.hidden { display: none !important; }
 
 /* ============================================= */
 /* ÉCRAN DE CHARGEMENT                          */
 /* ============================================= */
-.loading-screen {
+#loading-screen {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     background: var(--color-darker);
     display: flex;
     align-items: center;
@@ -136,7 +130,7 @@ body[data-background="moon"]::after {
     transition: opacity 0.5s ease, visibility 0.5s ease;
 }
 
-.loading-screen.fade-out {
+#loading-screen.fade-out {
     opacity: 0;
     visibility: hidden;
 }
@@ -146,31 +140,32 @@ body[data-background="moon"]::after {
 }
 
 .loading-trophy {
-    font-size: 80px;
-    animation: bounce 1s ease-in-out infinite;
+    font-size: 70px;
+    animation: bounce 0.8s ease-in-out infinite;
 }
 
 @keyframes bounce {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
+    50% { transform: translateY(-15px); }
 }
 
 .loading-content h1 {
     font-family: var(--font-display);
-    font-size: 2.5rem;
+    font-size: 2rem;
     color: var(--color-primary);
-    margin: 20px 0 10px;
+    margin: 15px 0 8px;
     text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
 }
 
 .loading-content p {
-    color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 30px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 20px;
+    font-size: 0.9rem;
 }
 
 .loading-bar {
-    width: 200px;
-    height: 6px;
+    width: 180px;
+    height: 5px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 3px;
     overflow: hidden;
@@ -182,7 +177,7 @@ body[data-background="moon"]::after {
     height: 100%;
     background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
     border-radius: 3px;
-    animation: loading 2s ease-in-out forwards;
+    animation: loading 1.5s ease-in-out forwards;
 }
 
 @keyframes loading {
@@ -200,12 +195,12 @@ body[data-background="moon"]::after {
     left: 0;
     right: 0;
     height: var(--header-height);
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.85);
     backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 15px;
+    padding: 0 12px;
     z-index: 100;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -213,18 +208,16 @@ body[data-background="moon"]::after {
 .header-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
-.logo {
-    font-size: 28px;
-}
+.logo { font-size: 24px; }
 
 .title {
     font-family: var(--font-display);
-    font-size: 1.2rem;
+    font-size: 1rem;
     color: var(--color-primary);
-    letter-spacing: 2px;
+    letter-spacing: 1px;
 }
 
 .header-center {
@@ -236,11 +229,11 @@ body[data-background="moon"]::after {
 .live-indicator {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
+    gap: 6px;
+    padding: 4px 10px;
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    font-size: 0.85rem;
+    border-radius: 15px;
+    font-size: 0.75rem;
 }
 
 .live-indicator.active {
@@ -248,11 +241,10 @@ body[data-background="moon"]::after {
 }
 
 .live-dot {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     background: #666;
     border-radius: 50%;
-    transition: background 0.3s;
 }
 
 .live-indicator.active .live-dot {
@@ -262,61 +254,86 @@ body[data-background="moon"]::after {
 
 @keyframes pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(1.2); }
+    50% { opacity: 0.5; transform: scale(1.3); }
 }
 
-.header-right {
-    display: flex;
-    align-items: center;
-}
+.header-right { display: flex; align-items: center; }
 
 .users-count {
     display: flex;
     align-items: center;
-    gap: 5px;
-    padding: 6px 12px;
+    gap: 4px;
+    padding: 4px 10px;
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    font-size: 0.9rem;
-}
-
-.user-icon {
-    font-size: 1rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
 }
 
 /* ============================================= */
-/* CONTENEUR DE JEU                              */
+/* MONDE DU JEU                                  */
 /* ============================================= */
-#game-container {
+#world-viewport {
     position: fixed;
     top: var(--header-height);
     left: 0;
     right: 0;
-    bottom: calc(var(--stamina-height) + 100px);
-    overflow: hidden;
+    bottom: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
     z-index: 1;
+    /* Scrollbar stylée */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.3) transparent;
 }
 
-#bars-viewport {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow: hidden;
+#world-viewport::-webkit-scrollbar {
+    height: 6px;
 }
 
-#bars-container {
+#world-viewport::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#world-viewport::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+#world-container {
+    position: relative;
+    min-width: max-content;
+    height: 100%;
+    /* La caméra = translation Y de ce conteneur */
+    transform: translateY(0);
+    transition: transform var(--transition-camera);
+    will-change: transform;
+}
+
+#ground {
     position: absolute;
-    bottom: 0;
+    bottom: var(--ground-height);
     left: 0;
-    right: 0;
     display: flex;
-    justify-content: center;
     align-items: flex-end;
     gap: var(--bar-gap);
     padding: 0 20px;
-    transition: transform 0.5s ease-out;
+    min-height: 100px;
+}
+
+/* Ligne de sol visuelle */
+#ground::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(255,255,255,0.2) 10%,
+        rgba(255,255,255,0.2) 90%,
+        transparent
+    );
 }
 
 /* ============================================= */
@@ -324,26 +341,24 @@ body[data-background="moon"]::after {
 /* ============================================= */
 .team-bar {
     width: var(--bar-width);
-    min-height: 30px;
-    border-radius: 8px 8px 0 0;
+    min-height: var(--bar-min-height);
+    border-radius: 6px 6px 0 0;
     position: relative;
     cursor: pointer;
-    transition: height 0.3s ease-out, transform 0.2s ease, opacity 0.3s ease;
+    flex-shrink: 0;
+    /* Animation fluide de la hauteur */
+    transition: height 0.25s ease-out;
     transform-origin: bottom center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    /* Prévenir les clics accidentels */
+    -webkit-touch-callout: none;
 }
 
-/* Texture drapeau (3 bandes verticales) */
+/* Texture 3 bandes verticales (drapeau) */
 .team-bar::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 8px 8px 0 0;
+    inset: 0;
+    border-radius: 6px 6px 0 0;
     background: linear-gradient(90deg,
         var(--color-1) 0%,
         var(--color-1) 33.33%,
@@ -352,31 +367,59 @@ body[data-background="moon"]::after {
         var(--color-3) 66.66%,
         var(--color-3) 100%
     );
-    opacity: 0.9;
 }
 
-/* Effet de brillance */
+/* Effet brillance */
 .team-bar::after {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 50%;
-    border-radius: 8px 8px 0 0;
-    background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 100%);
+    height: 40%;
+    border-radius: 6px 6px 0 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 100%);
     pointer-events: none;
 }
 
+/* Hover effect */
 .team-bar:hover {
-    transform: scaleX(1.1);
+    filter: brightness(1.1);
 }
 
+/* Click effect */
 .team-bar:active {
-    transform: scaleX(1.05) scaleY(0.98);
+    transform: scaleY(0.97);
 }
 
-/* Label au-dessus de la barre */
+.team-bar.clicking {
+    animation: barClick 0.15s ease-out;
+}
+
+@keyframes barClick {
+    0% { transform: scaleY(1); }
+    50% { transform: scaleY(0.95); }
+    100% { transform: scaleY(1); }
+}
+
+/* Match en direct */
+.team-bar.live-match::before {
+    border: 2px solid var(--neon-green);
+    box-shadow: var(--neon-glow), inset 0 0 15px rgba(0, 255, 136, 0.15);
+}
+
+.team-bar.live-match {
+    animation: neonPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes neonPulse {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.15); }
+}
+
+/* ============================================= */
+/* LABEL AU-DESSUS DE LA BARRE                  */
+/* ============================================= */
 .bar-label {
     position: absolute;
     bottom: 100%;
@@ -385,412 +428,213 @@ body[data-background="moon"]::after {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 5px;
-    padding-bottom: 10px;
-    white-space: nowrap;
+    padding-bottom: 6px;
+    pointer-events: none;
     z-index: 10;
 }
 
 .bar-flag {
-    font-size: 24px;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-}
-
-.bar-flag img {
-    width: 30px;
-    height: 20px;
-    object-fit: cover;
-    border-radius: 2px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    font-size: 22px;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+    margin-bottom: 2px;
 }
 
 .bar-score {
     font-weight: bold;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: var(--color-light);
-    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-    background: rgba(0,0,0,0.5);
-    padding: 2px 8px;
-    border-radius: 10px;
-}
-
-.bar-name {
-    font-size: 0.7rem;
-    color: rgba(255,255,255,0.8);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* Match en direct - Effet néon */
-.team-bar.live-match {
-    z-index: 50;
-    animation: neonPulse 1.5s ease-in-out infinite;
-}
-
-.team-bar.live-match::before {
-    border: 3px solid var(--neon-green);
-    box-shadow: var(--neon-glow), inset 0 0 20px rgba(0, 255, 136, 0.2);
-}
-
-@keyframes neonPulse {
-    0%, 100% { filter: brightness(1); }
-    50% { filter: brightness(1.2); }
-}
-
-/* Barre hors écran (masquée) */
-.team-bar.hidden-bar {
-    opacity: 0;
-    pointer-events: none;
-}
-
-/* ============================================= */
-/* GOUTTES (équipes à la traîne)                */
-/* ============================================= */
-#drops-container {
-    position: fixed;
-    bottom: calc(var(--stamina-height) + 110px);
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    padding: 0 20px;
-    z-index: 50;
-    flex-wrap: wrap;
-}
-
-.team-drop {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    background: rgba(0, 0, 0, 0.7);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    animation: dropFloat 2s ease-in-out infinite;
-    position: relative;
-}
-
-.team-drop:hover {
-    transform: scale(1.2);
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-}
-
-.team-drop img {
-    width: 24px;
-    height: 16px;
-    object-fit: cover;
-    border-radius: 2px;
-}
-
-.team-drop::after {
-    content: attr(data-score);
-    position: absolute;
-    bottom: -18px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.65rem;
-    color: rgba(255,255,255,0.7);
-    background: rgba(0,0,0,0.5);
-    padding: 1px 5px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+    background: rgba(0, 0, 0, 0.6);
+    padding: 2px 6px;
     border-radius: 8px;
     white-space: nowrap;
 }
 
-@keyframes dropFloat {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
+.bar-name {
+    font-size: 0.6rem;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
 }
 
-.team-drop.live-match {
+/* ============================================= */
+/* UI FIXE (OVERLAY)                            */
+/* ============================================= */
+#game-ui {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+}
+
+/* ============================================= */
+/* CONTENEUR DES GOUTTES                        */
+/* ============================================= */
+#drops-container {
+    position: fixed;
+    bottom: 15px;
+    left: 0;
+    right: 0;
+    height: calc(var(--drop-size) + 20px);
+    display: flex;
+    align-items: flex-end;
+    padding: 0 20px;
+    gap: var(--bar-gap);
+    pointer-events: none;
+    z-index: 60;
+    /* Même scroll que le world */
+    overflow: visible;
+}
+
+/* ============================================= */
+/* GOUTTE (pays hors écran)                     */
+/* ============================================= */
+.team-drop {
+    width: var(--drop-size);
+    height: var(--drop-size);
+    flex-shrink: 0;
+    position: relative;
+    pointer-events: auto;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+}
+
+.team-drop.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Forme de goutte inversée (pointeur) */
+.team-drop::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.team-drop:hover::before {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+}
+
+.team-drop:active {
+    transform: scale(0.9);
+}
+
+/* Drapeau dans la goutte */
+.drop-flag {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(0deg);
+    font-size: 18px;
+    z-index: 1;
+}
+
+/* Score sous la goutte */
+.drop-score {
+    position: absolute;
+    bottom: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.6rem;
+    color: rgba(255,255,255,0.6);
+    background: rgba(0,0,0,0.5);
+    padding: 1px 4px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+/* Animation flottante des gouttes */
+.team-drop.visible {
+    animation: dropBounce 2s ease-in-out infinite;
+}
+
+@keyframes dropBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+/* Goutte match en direct */
+.team-drop.live-match::before {
     border-color: var(--neon-green);
     box-shadow: 0 0 10px var(--neon-green);
 }
 
 /* ============================================= */
-/* BARRE DE STAMINA                              */
+/* INDICATEUR DU LEADER                         */
 /* ============================================= */
-#stamina-bar-container {
+#leader-indicator {
     position: fixed;
-    bottom: 100px;
-    left: 20px;
-    right: 20px;
-    background: rgba(0, 0, 0, 0.7);
-    border-radius: 12px;
-    padding: 10px 15px;
-    z-index: 100;
+    top: calc(var(--header-height) + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(5px);
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    pointer-events: auto;
+    z-index: 70;
 }
 
-.stamina-label {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
+.leader-crown {
+    font-size: 20px;
+    animation: crownBounce 1s ease-in-out infinite;
+}
+
+@keyframes crownBounce {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-3px) rotate(5deg); }
+}
+
+#leader-name {
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: var(--color-primary);
+}
+
+#leader-score {
     font-size: 0.85rem;
     color: rgba(255, 255, 255, 0.8);
 }
 
-#stamina-bar {
-    height: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 5px;
-    overflow: hidden;
-}
-
-#stamina-fill {
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, var(--color-secondary), var(--color-primary));
-    border-radius: 5px;
-    transition: width 0.1s linear;
-}
-
-#stamina-fill.low {
-    background: linear-gradient(90deg, var(--color-danger), var(--color-secondary));
-}
-
-#stamina-fill.empty {
-    background: var(--color-danger);
-}
-
-#stamina-warning {
-    text-align: center;
-    padding-top: 8px;
-    color: var(--color-danger);
-    font-size: 0.85rem;
-    animation: blink 0.5s ease-in-out infinite;
-}
-
-@keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
 /* ============================================= */
-/* SÉLECTEUR D'ÉQUIPE                           */
+/* EFFETS DE CLIC (+1)                          */
 /* ============================================= */
-#team-selector {
+#click-effects {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.95);
-    z-index: 200;
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    overflow-y: auto;
-}
-
-.selector-header {
-    text-align: center;
-    padding: 20px 0 30px;
-}
-
-.selector-header h2 {
-    font-size: 1.8rem;
-    color: var(--color-primary);
-    margin-bottom: 10px;
-}
-
-.selector-header p {
-    color: rgba(255, 255, 255, 0.7);
-}
-
-#teams-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 15px;
-    padding-bottom: 30px;
-}
-
-.team-select-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 15px 10px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid transparent;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.team-select-card:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.3);
-    transform: translateY(-3px);
-}
-
-.team-select-card:active {
-    transform: scale(0.95);
-}
-
-.team-select-card.live-match {
-    border-color: var(--neon-green);
-    box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
-}
-
-.team-select-card .flag {
-    font-size: 36px;
-    margin-bottom: 8px;
-}
-
-.team-select-card .flag img {
-    width: 48px;
-    height: 32px;
-    object-fit: cover;
-    border-radius: 4px;
-}
-
-.team-select-card .name {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: rgba(255, 255, 255, 0.9);
-    text-align: center;
-}
-
-.team-select-card .score {
-    font-size: 0.9rem;
-    font-weight: bold;
-    color: var(--color-primary);
-    margin-top: 5px;
-}
-
-/* ============================================= */
-/* ZONE DE CLIC                                  */
-/* ============================================= */
-#click-zone {
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
-    right: 20px;
-    display: flex;
-    gap: 10px;
-    z-index: 100;
-}
-
-#click-button {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    padding: 15px 20px;
-    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-    border: none;
-    border-radius: 16px;
-    cursor: pointer;
-    transition: transform 0.1s ease, box-shadow 0.2s ease;
-    box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3);
-}
-
-#click-button:not(:disabled):hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(255, 215, 0, 0.4);
-}
-
-#click-button:not(:disabled):active {
-    transform: scale(0.97);
-}
-
-#click-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-#click-button.combo-active {
-    animation: comboGlow 0.3s ease-in-out infinite alternate;
-}
-
-@keyframes comboGlow {
-    0% { box-shadow: 0 5px 20px rgba(255, 107, 53, 0.5); }
-    100% { box-shadow: 0 5px 40px rgba(255, 107, 53, 0.8), 0 0 60px rgba(255, 107, 53, 0.4); }
-}
-
-.click-flag {
-    font-size: 36px;
-}
-
-.click-flag img {
-    width: 48px;
-    height: 32px;
-    object-fit: cover;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
-
-.click-info {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-.click-team-name {
-    font-size: 1rem;
-    font-weight: bold;
-    color: var(--color-dark);
-}
-
-.click-score {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--color-dark);
-}
-
-#change-team-btn {
-    width: 60px;
-    height: 60px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 16px;
-    cursor: pointer;
-    font-size: 24px;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#change-team-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: rotate(180deg);
-}
-
-/* ============================================= */
-/* EFFETS DE CLIC (+1 flottant)                 */
-/* ============================================= */
-#click-effects-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     pointer-events: none;
-    z-index: 150;
+    z-index: 200;
     overflow: hidden;
 }
 
 .click-effect {
     position: absolute;
     font-weight: bold;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     color: var(--color-success);
-    text-shadow: 0 0 10px var(--color-success);
-    animation: floatUp 0.8s ease-out forwards;
+    text-shadow: 0 0 8px var(--color-success), 0 2px 4px rgba(0,0,0,0.5);
+    animation: floatUp 0.7s ease-out forwards;
     pointer-events: none;
+    white-space: nowrap;
 }
 
 .click-effect.combo {
-    font-size: 2rem;
+    font-size: 1.8rem;
     color: var(--color-secondary);
-    text-shadow: 0 0 15px var(--color-secondary), 0 0 30px var(--color-primary);
+    text-shadow: 0 0 12px var(--color-secondary), 0 0 25px var(--color-primary);
 }
 
 @keyframes floatUp {
@@ -800,264 +644,82 @@ body[data-background="moon"]::after {
     }
     100% {
         opacity: 0;
-        transform: translateY(-80px) scale(0.5);
+        transform: translateY(-60px) scale(0.6);
     }
 }
 
 /* ============================================= */
-/* PANNEAU DE CLASSEMENT                        */
-/* ============================================= */
-#ranking-panel {
-    position: fixed;
-    top: var(--header-height);
-    right: 0;
-    width: 280px;
-    max-width: 90%;
-    height: calc(100% - var(--header-height));
-    background: rgba(0, 0, 0, 0.95);
-    backdrop-filter: blur(10px);
-    z-index: 150;
-    display: flex;
-    flex-direction: column;
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-#ranking-panel:not(.hidden) {
-    transform: translateX(0);
-}
-
-.panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.panel-header h2 {
-    font-size: 1.2rem;
-    color: var(--color-primary);
-}
-
-.close-btn {
-    width: 32px;
-    height: 32px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 50%;
-    color: white;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background 0.2s;
-}
-
-.close-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-#ranking-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px;
-}
-
-.ranking-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 10px;
-    margin-bottom: 8px;
-    transition: background 0.2s;
-}
-
-.ranking-item:hover {
-    background: rgba(255, 255, 255, 0.08);
-}
-
-.ranking-item.top-3 {
-    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), transparent);
-}
-
-.ranking-item.live-match {
-    border: 1px solid var(--neon-green);
-}
-
-.ranking-position {
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    font-weight: bold;
-    font-size: 0.85rem;
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.ranking-item.top-3:nth-child(1) .ranking-position {
-    background: linear-gradient(135deg, #ffd700, #ffed4a);
-    color: #1a1a2e;
-}
-
-.ranking-item.top-3:nth-child(2) .ranking-position {
-    background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
-    color: #1a1a2e;
-}
-
-.ranking-item.top-3:nth-child(3) .ranking-position {
-    background: linear-gradient(135deg, #cd7f32, #daa520);
-    color: #1a1a2e;
-}
-
-.ranking-flag {
-    font-size: 24px;
-}
-
-.ranking-flag img {
-    width: 32px;
-    height: 21px;
-    object-fit: cover;
-    border-radius: 2px;
-}
-
-.ranking-info {
-    flex: 1;
-}
-
-.ranking-name {
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-
-.ranking-score {
-    font-size: 1.1rem;
-    font-weight: bold;
-    color: var(--color-primary);
-}
-
-#ranking-toggle {
-    position: fixed;
-    top: calc(var(--header-height) + 20px);
-    right: 20px;
-    width: 50px;
-    height: 50px;
-    background: rgba(0, 0, 0, 0.7);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 24px;
-    z-index: 99;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#ranking-toggle:hover {
-    background: rgba(0, 0, 0, 0.9);
-    transform: scale(1.1);
-}
-
-/* ============================================= */
-/* TOAST NOTIFICATIONS                           */
+/* TOAST NOTIFICATIONS                          */
 /* ============================================= */
 #toast-container {
     position: fixed;
-    top: calc(var(--header-height) + 20px);
+    top: calc(var(--header-height) + 60px);
     left: 50%;
     transform: translateX(-50%);
     z-index: 300;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     pointer-events: none;
 }
 
 .toast {
     background: rgba(0, 0, 0, 0.9);
     color: white;
-    padding: 12px 24px;
-    border-radius: 25px;
-    font-size: 0.9rem;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 0.85rem;
     animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
     white-space: nowrap;
 }
 
-.toast.error {
-    background: rgba(255, 71, 87, 0.9);
-}
-
-.toast.success {
-    background: rgba(0, 210, 106, 0.9);
-}
+.toast.error { background: rgba(255, 71, 87, 0.9); }
+.toast.success { background: rgba(0, 210, 106, 0.9); }
 
 @keyframes toastIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-15px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes toastOut {
-    from {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    to {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
+    from { opacity: 1; }
+    to { opacity: 0; }
 }
 
 /* ============================================= */
-/* OVERLAY COMBO                                 */
+/* COMBO OVERLAY                                 */
 /* ============================================= */
 #combo-overlay {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 200;
+    z-index: 250;
     pointer-events: none;
 }
 
 #combo-overlay:not(.hidden) {
-    animation: comboPopIn 0.3s ease;
+    animation: comboPopIn 0.2s ease;
 }
 
 .combo-text {
     font-family: var(--font-display);
-    font-size: 3rem;
+    font-size: 2.5rem;
     color: var(--color-secondary);
     text-shadow:
-        0 0 20px var(--color-secondary),
-        0 0 40px var(--color-primary),
-        0 0 60px var(--color-secondary);
-    animation: comboPulse 0.5s ease-in-out infinite;
+        0 0 15px var(--color-secondary),
+        0 0 30px var(--color-primary);
+    animation: comboPulse 0.4s ease-in-out infinite;
 }
 
 @keyframes comboPopIn {
-    0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.5);
-    }
-    100% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-    }
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
 @keyframes comboPulse {
     0%, 100% { transform: translate(-50%, -50%) scale(1); }
-    50% { transform: translate(-50%, -50%) scale(1.1); }
+    50% { transform: translate(-50%, -50%) scale(1.08); }
 }
 
 /* ============================================= */
@@ -1065,33 +727,21 @@ body[data-background="moon"]::after {
 /* ============================================= */
 @media (min-width: 768px) {
     :root {
-        --bar-width: 60px;
-        --bar-gap: 20px;
+        --bar-width: 70px;
+        --bar-gap: 12px;
+        --drop-size: 50px;
+        --header-height: 55px;
     }
 
-    .title {
-        font-size: 1.5rem;
+    .title { font-size: 1.2rem; }
+    .bar-flag { font-size: 26px; }
+    .bar-score { font-size: 0.9rem; }
+
+    #leader-indicator {
+        padding: 10px 20px;
     }
 
-    #teams-grid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    }
-
-    #click-button {
-        padding: 20px 30px;
-    }
-
-    .click-flag {
-        font-size: 48px;
-    }
-
-    .click-score {
-        font-size: 2rem;
-    }
-
-    #ranking-panel {
-        width: 320px;
-    }
+    .combo-text { font-size: 3rem; }
 }
 
 /* ============================================= */
@@ -1099,95 +749,45 @@ body[data-background="moon"]::after {
 /* ============================================= */
 @media (min-width: 1024px) {
     :root {
-        --bar-width: 70px;
-        --bar-gap: 25px;
+        --bar-width: 80px;
+        --bar-gap: 15px;
+        --drop-size: 55px;
     }
 
-    .loading-trophy {
-        font-size: 120px;
-    }
+    .loading-trophy { font-size: 100px; }
+    .loading-content h1 { font-size: 3rem; }
 
-    .loading-content h1 {
-        font-size: 3.5rem;
-    }
+    .bar-flag { font-size: 30px; }
+    .bar-score { font-size: 1rem; padding: 3px 8px; }
+    .bar-name { font-size: 0.7rem; }
 
-    #teams-grid {
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        max-width: 1000px;
-        margin: 0 auto;
-    }
-
-    #click-zone {
-        max-width: 500px;
-        left: 50%;
-        transform: translateX(-50%);
-    }
-
-    #stamina-bar-container {
-        max-width: 400px;
-        left: 50%;
-        transform: translateX(-50%);
-    }
-
-    body[data-background="moon"]::after {
-        font-size: 120px;
-    }
+    .drop-flag { font-size: 22px; }
 }
 
 /* ============================================= */
-/* ÉCRAN TRÈS PETIT (iPhone SE, etc.)           */
+/* TRÈS PETITS ÉCRANS                           */
 /* ============================================= */
-@media (max-width: 375px) {
+@media (max-width: 380px) {
     :root {
-        --bar-width: 40px;
-        --bar-gap: 10px;
-        --header-height: 50px;
+        --bar-width: 50px;
+        --bar-gap: 6px;
+        --drop-size: 38px;
+        --header-height: 45px;
     }
 
-    .title {
-        font-size: 1rem;
+    .title { font-size: 0.85rem; }
+    .live-indicator { display: none; }
+
+    .bar-flag { font-size: 18px; }
+    .bar-score { font-size: 0.7rem; padding: 1px 4px; }
+    .bar-name { display: none; }
+
+    #leader-indicator {
+        padding: 6px 12px;
+        font-size: 0.8rem;
     }
 
-    .live-indicator {
-        display: none; /* Masquer sur très petits écrans */
-    }
-
-    .bar-flag {
-        font-size: 18px;
-    }
-
-    .bar-score {
-        font-size: 0.75rem;
-    }
-
-    #teams-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-    }
-
-    .team-select-card {
-        padding: 10px 5px;
-    }
-
-    .team-select-card .flag {
-        font-size: 28px;
-    }
-
-    .team-select-card .name {
-        font-size: 0.65rem;
-    }
-
-    #click-button {
-        padding: 12px 15px;
-    }
-
-    .click-flag {
-        font-size: 28px;
-    }
-
-    .combo-text {
-        font-size: 2rem;
-    }
+    .combo-text { font-size: 2rem; }
 }
 
 /* ============================================= */

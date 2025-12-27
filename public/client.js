@@ -1,48 +1,44 @@
 /**
- * CAN Clicker Game - Client JavaScript
- * Gestion temps réel, logique de caméra, gamification
+ * CAN Clicker Game - Client v2
+ * Nouvelle UX: Clic direct sur barres, caméra verticale suivant le leader, système de gouttes
  *
- * Vanilla JS - Performance optimisée
+ * Vanilla JS optimisé pour performance
  */
 
 // ============================================================
-// CONFIGURATION ET ÉTAT GLOBAL
+// ÉTAT GLOBAL DU JEU
 // ============================================================
 
-const GameState = {
-    // Données du serveur
+const Game = {
+    // Données serveur
     teams: [],
     matches: [],
     settings: {},
     scores: {},
     liveTeams: [],
 
-    // État local
-    selectedTeam: null,
+    // État UI
     connectedUsers: 0,
     backgroundLevel: 'stadium',
 
-    // Système de stamina
-    stamina: 100,
-    maxStamina: 100,
-    isExhausted: false,
-    staminaCooldownEnd: 0,
+    // Système de caméra
+    camera: {
+        offsetY: 0,           // Décalage vertical actuel (positif = monte)
+        targetOffsetY: 0,     // Cible pour interpolation
+        viewportHeight: 0,    // Hauteur visible
+        groundY: 0            // Position Y du sol dans le viewport
+    },
 
     // Système de combo
-    clickTimestamps: [],
+    clickHistory: [],         // Timestamps des derniers clics
     comboActive: false,
-    comboThreshold: 5, // clics par seconde pour activer
+    comboThreshold: 5,        // Clics/seconde pour combo
 
-    // Caméra
-    cameraOffset: 0,
-    viewportHeight: 0,
-    dropThreshold: 0.3, // % du viewport en dessous duquel on devient une goutte
-
-    // Cache des éléments DOM
-    elements: {}
+    // Références DOM (cache)
+    dom: {}
 };
 
-// Connexion Socket.io
+// Socket.io
 let socket = null;
 
 // ============================================================
@@ -50,163 +46,137 @@ let socket = null;
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🏆 CAN Clicker - Initialisation...');
+    console.log('🏆 CAN Clicker v2 - Initialisation...');
 
-    // Cache des éléments DOM fréquemment utilisés
-    cacheElements();
+    // Cache des éléments DOM
+    cacheDOM();
 
-    // Initialisation Socket.io
+    // Dimensions initiales
+    updateViewportDimensions();
+
+    // Socket.io
     initSocket();
 
-    // Chargement des données initiales via API
-    loadInitialData();
+    // Charger les données
+    loadGameData();
 
     // Event listeners
-    setupEventListeners();
+    setupEvents();
 
-    // Boucle de mise à jour
+    // Boucle de rendu
     requestAnimationFrame(gameLoop);
 });
 
 /**
- * Met en cache les éléments DOM pour éviter les queries répétées
+ * Cache les références DOM pour éviter les queries répétées
  */
-function cacheElements() {
-    GameState.elements = {
+function cacheDOM() {
+    Game.dom = {
         loadingScreen: document.getElementById('loading-screen'),
-        barsContainer: document.getElementById('bars-container'),
+        worldViewport: document.getElementById('world-viewport'),
+        worldContainer: document.getElementById('world-container'),
+        ground: document.getElementById('ground'),
         dropsContainer: document.getElementById('drops-container'),
-        teamSelector: document.getElementById('team-selector'),
-        teamsGrid: document.getElementById('teams-grid'),
-        clickZone: document.getElementById('click-zone'),
-        clickButton: document.getElementById('click-button'),
-        clickFlag: document.getElementById('click-flag'),
-        clickTeamName: document.getElementById('click-team-name'),
-        clickScore: document.getElementById('click-score'),
-        changeTeamBtn: document.getElementById('change-team-btn'),
-        staminaFill: document.getElementById('stamina-fill'),
-        staminaText: document.getElementById('stamina-text'),
-        staminaWarning: document.getElementById('stamina-warning'),
-        clickEffects: document.getElementById('click-effects-container'),
-        rankingPanel: document.getElementById('ranking-panel'),
-        rankingList: document.getElementById('ranking-list'),
-        rankingToggle: document.getElementById('ranking-toggle'),
-        closeRanking: document.getElementById('close-ranking'),
+        clickEffects: document.getElementById('click-effects'),
+        toastContainer: document.getElementById('toast-container'),
+        comboOverlay: document.getElementById('combo-overlay'),
         liveIndicator: document.getElementById('live-indicator'),
         liveMatchText: document.getElementById('live-match-text'),
         usersCount: document.getElementById('users-count'),
-        toastContainer: document.getElementById('toast-container'),
-        comboOverlay: document.getElementById('combo-overlay')
+        leaderName: document.getElementById('leader-name'),
+        leaderScore: document.getElementById('leader-score')
     };
 }
 
+/**
+ * Met à jour les dimensions du viewport
+ */
+function updateViewportDimensions() {
+    Game.camera.viewportHeight = window.innerHeight - 50; // Moins header
+    Game.camera.groundY = Game.camera.viewportHeight - 20; // 20px pour le sol
+}
+
 // ============================================================
-// SOCKET.IO - COMMUNICATION TEMPS RÉEL
+// SOCKET.IO - TEMPS RÉEL
 // ============================================================
 
 function initSocket() {
     socket = io({
         reconnection: true,
         reconnectionAttempts: 10,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000
+        reconnectionDelay: 1000
     });
 
-    // Connexion établie
     socket.on('connect', () => {
         console.log('🔌 Connecté au serveur');
         showToast('Connecté !', 'success');
     });
 
-    // État initial reçu
     socket.on('init', (data) => {
-        console.log('📦 Données initiales reçues');
-        GameState.scores = data.scores;
-        GameState.liveTeams = data.liveTeams;
-        GameState.backgroundLevel = data.backgroundLevel;
-        GameState.connectedUsers = data.connectedUsers;
+        console.log('📦 État initial reçu');
+        Game.scores = data.scores;
+        Game.liveTeams = data.liveTeams || [];
+        Game.backgroundLevel = data.backgroundLevel;
+        Game.connectedUsers = data.connectedUsers;
 
-        updateBackground();
-        updateUsersCount();
-        updateLiveIndicator();
-        renderBars();
+        updateUI();
+        renderAllBars();
     });
 
-    // Mise à jour d'un score individuel
     socket.on('score-update', (data) => {
-        GameState.scores[data.teamId] = data.score;
+        Game.scores[data.teamId] = data.score;
 
-        // Mettre à jour le background si nécessaire
-        if (data.backgroundLevel !== GameState.backgroundLevel) {
-            GameState.backgroundLevel = data.backgroundLevel;
+        if (data.backgroundLevel !== Game.backgroundLevel) {
+            Game.backgroundLevel = data.backgroundLevel;
             updateBackground();
         }
 
-        // Mettre à jour la barre concernée
-        updateBar(data.teamId);
-
-        // Mettre à jour le score affiché si c'est notre équipe
-        if (data.teamId === GameState.selectedTeam) {
-            updateSelectedTeamScore();
-        }
+        // Mise à jour de la barre concernée
+        updateBarHeight(data.teamId);
+        updateBarScore(data.teamId);
+        updateLeaderDisplay();
     });
 
-    // Mise à jour du classement complet
     socket.on('ranking-update', (data) => {
-        if (data.backgroundLevel !== GameState.backgroundLevel) {
-            GameState.backgroundLevel = data.backgroundLevel;
+        if (data.backgroundLevel !== Game.backgroundLevel) {
+            Game.backgroundLevel = data.backgroundLevel;
             updateBackground();
         }
-        updateRankingPanel(data.ranking);
-        updateCamera();
+        updateLeaderDisplay();
     });
 
-    // Mise à jour des matchs en direct
     socket.on('live-update', (data) => {
-        GameState.liveTeams = data.liveTeams;
+        Game.liveTeams = data.liveTeams || [];
         updateLiveIndicator();
-        updateLiveMatchHighlights();
+        updateLiveHighlights();
     });
 
-    // Mise à jour du nombre d'utilisateurs
     socket.on('users-update', (data) => {
-        GameState.connectedUsers = data.count;
-        updateUsersCount();
+        Game.connectedUsers = data.count;
+        Game.dom.usersCount.textContent = data.count;
     });
 
-    // Limite de débit atteinte
-    socket.on('rate-limited', (data) => {
-        showToast(data.message, 'error');
+    socket.on('rate-limited', () => {
+        showToast('Trop rapide !', 'error');
     });
 
-    // Réponse de synchronisation
     socket.on('sync-response', (data) => {
-        GameState.scores = data.scores;
-        GameState.liveTeams = data.liveTeams;
-        GameState.backgroundLevel = data.backgroundLevel;
-        GameState.connectedUsers = data.connectedUsers;
-
-        updateBackground();
-        updateUsersCount();
-        renderBars();
+        Game.scores = data.scores;
+        Game.liveTeams = data.liveTeams || [];
+        Game.backgroundLevel = data.backgroundLevel;
+        Game.connectedUsers = data.connectedUsers;
+        updateUI();
+        renderAllBars();
     });
 
-    // Déconnexion
     socket.on('disconnect', () => {
-        console.log('❌ Déconnecté du serveur');
+        console.log('❌ Déconnecté');
         showToast('Connexion perdue...', 'error');
     });
 
-    // Reconnexion
     socket.on('reconnect', () => {
-        console.log('🔄 Reconnecté !');
         showToast('Reconnecté !', 'success');
         socket.emit('sync-request');
-    });
-
-    // Fermeture serveur
-    socket.on('server-shutdown', (data) => {
-        showToast(data.message, 'error');
     });
 }
 
@@ -214,211 +184,290 @@ function initSocket() {
 // CHARGEMENT DES DONNÉES
 // ============================================================
 
-async function loadInitialData() {
+async function loadGameData() {
     try {
         const response = await fetch('/api/data');
         const data = await response.json();
 
-        GameState.teams = data.teams;
-        GameState.matches = data.matches;
-        GameState.settings = data.settings;
-        GameState.scores = data.scores;
-        GameState.liveTeams = data.liveTeams;
-        GameState.backgroundLevel = data.backgroundLevel;
-        GameState.connectedUsers = data.connectedUsers;
+        Game.teams = data.teams;
+        Game.matches = data.matches;
+        Game.settings = data.settings || {};
+        Game.scores = data.scores;
+        Game.liveTeams = data.liveTeams || [];
+        Game.backgroundLevel = data.backgroundLevel;
+        Game.connectedUsers = data.connectedUsers;
+        Game.comboThreshold = data.settings?.comboThreshold || 5;
 
-        // Appliquer les paramètres
-        if (data.settings) {
-            GameState.comboThreshold = data.settings.comboThreshold || 5;
-        }
+        console.log(`✅ ${Game.teams.length} équipes chargées`);
 
-        console.log(`✅ ${GameState.teams.length} équipes chargées`);
+        // Générer les barres et gouttes
+        createBars();
+        createDrops();
 
-        // Générer les UI
-        renderTeamSelector();
-        renderBars();
-        updateBackground();
-        updateUsersCount();
-        updateLiveIndicator();
+        // UI initiale
+        updateUI();
 
-        // Masquer l'écran de chargement
+        // Cacher l'écran de chargement
         hideLoadingScreen();
 
-        // Afficher le sélecteur d'équipe
-        showTeamSelector();
-
     } catch (error) {
-        console.error('❌ Erreur de chargement:', error);
-        showToast('Erreur de chargement des données', 'error');
+        console.error('❌ Erreur chargement:', error);
+        showToast('Erreur de connexion', 'error');
     }
 }
 
 // ============================================================
-// GESTION DES ASSETS (FLAGS, SONS)
+// CRÉATION DES ÉLÉMENTS
 // ============================================================
 
 /**
- * Récupère le drapeau d'une équipe (image ou emoji fallback)
- * @param {string} teamId - ID de l'équipe
- * @returns {string} HTML du drapeau
+ * Crée toutes les barres des équipes
  */
-function getFlag(teamId) {
-    const team = GameState.teams.find(t => t.id === teamId);
-    if (!team) return '🏳️';
+function createBars() {
+    const ground = Game.dom.ground;
+    ground.innerHTML = '';
 
-    // Essayer de charger l'image, sinon emoji
-    const imgSrc = team.flagUrl;
-    const emoji = team.emoji || '🏳️';
-
-    // Pour l'instant, utiliser l'emoji (les images seront ajoutées plus tard)
-    // En production, vérifier si l'image existe avec un Image() préload
-    return `<span class="flag-emoji">${emoji}</span>`;
-}
-
-/**
- * Récupère l'objet équipe par ID
- */
-function getTeam(teamId) {
-    return GameState.teams.find(t => t.id === teamId);
-}
-
-// ============================================================
-// RENDU DES ÉQUIPES
-// ============================================================
-
-/**
- * Affiche la grille de sélection d'équipe
- */
-function renderTeamSelector() {
-    const grid = GameState.elements.teamsGrid;
-    grid.innerHTML = '';
-
-    // Trier les équipes par nom
-    const sortedTeams = [...GameState.teams].sort((a, b) =>
+    // Trier par nom pour ordre cohérent
+    const sortedTeams = [...Game.teams].sort((a, b) =>
         a.name.localeCompare(b.name, 'fr')
     );
 
-    sortedTeams.forEach(team => {
-        const card = document.createElement('div');
-        card.className = 'team-select-card';
-        card.dataset.teamId = team.id;
-
-        // Marquer si match en direct
-        if (GameState.liveTeams.includes(team.id)) {
-            card.classList.add('live-match');
-        }
-
-        card.innerHTML = `
-            <div class="flag">${getFlag(team.id)}</div>
-            <div class="name">${team.shortName}</div>
-            <div class="score">${GameState.scores[team.id] || 0}</div>
-        `;
-
-        card.addEventListener('click', () => selectTeam(team.id));
-        grid.appendChild(card);
-    });
-}
-
-/**
- * Affiche les barres des équipes
- */
-function renderBars() {
-    const container = GameState.elements.barsContainer;
-    container.innerHTML = '';
-
-    // Trier par score décroissant
-    const ranking = getRanking();
-
-    ranking.forEach((entry, index) => {
-        const team = getTeam(entry.teamId);
-        if (!team) return;
-
+    sortedTeams.forEach((team, index) => {
         const bar = document.createElement('div');
         bar.className = 'team-bar';
         bar.id = `bar-${team.id}`;
         bar.dataset.teamId = team.id;
+        bar.dataset.index = index;
 
-        // Appliquer les couleurs du drapeau
+        // Couleurs du drapeau
         bar.style.setProperty('--color-1', team.colors[0]);
         bar.style.setProperty('--color-2', team.colors[1]);
         bar.style.setProperty('--color-3', team.colors[2]);
 
-        // Calculer la hauteur (min 30px, max basé sur le score)
-        const height = calculateBarHeight(entry.score);
+        // Hauteur initiale
+        const height = calculateBarHeight(Game.scores[team.id] || 0);
         bar.style.height = `${height}px`;
 
-        // Marquer si match en direct
-        if (GameState.liveTeams.includes(team.id)) {
+        // Match en direct ?
+        if (Game.liveTeams.includes(team.id)) {
             bar.classList.add('live-match');
         }
 
+        // Label (drapeau + score + nom)
         bar.innerHTML = `
             <div class="bar-label">
-                <span class="bar-flag">${getFlag(team.id)}</span>
-                <span class="bar-score">${formatScore(entry.score)}</span>
+                <span class="bar-flag">${team.emoji}</span>
+                <span class="bar-score">${formatScore(Game.scores[team.id] || 0)}</span>
                 <span class="bar-name">${team.shortName}</span>
             </div>
         `;
 
-        // Clic sur la barre = sélectionner cette équipe
-        bar.addEventListener('click', () => selectTeam(team.id));
+        // Événement clic
+        bar.addEventListener('click', (e) => handleBarClick(team.id, e));
+        bar.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleBarClick(team.id, e);
+        }, { passive: false });
 
-        container.appendChild(bar);
+        ground.appendChild(bar);
     });
-
-    // Mettre à jour la caméra
-    updateCamera();
 }
 
 /**
- * Met à jour une barre spécifique
+ * Crée les gouttes (placeholders, visibilité gérée dynamiquement)
  */
-function updateBar(teamId) {
+function createDrops() {
+    const container = Game.dom.dropsContainer;
+    container.innerHTML = '';
+
+    // Même ordre que les barres
+    const sortedTeams = [...Game.teams].sort((a, b) =>
+        a.name.localeCompare(b.name, 'fr')
+    );
+
+    sortedTeams.forEach((team, index) => {
+        const drop = document.createElement('div');
+        drop.className = 'team-drop';
+        drop.id = `drop-${team.id}`;
+        drop.dataset.teamId = team.id;
+        drop.dataset.index = index;
+
+        // Match en direct ?
+        if (Game.liveTeams.includes(team.id)) {
+            drop.classList.add('live-match');
+        }
+
+        drop.innerHTML = `
+            <span class="drop-flag">${team.emoji}</span>
+            <span class="drop-score">${formatScore(Game.scores[team.id] || 0)}</span>
+        `;
+
+        // Clic sur goutte = clic pour le pays
+        drop.addEventListener('click', (e) => handleBarClick(team.id, e));
+        drop.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleBarClick(team.id, e);
+        }, { passive: false });
+
+        container.appendChild(drop);
+    });
+}
+
+// ============================================================
+// GESTION DES CLICS
+// ============================================================
+
+/**
+ * Gère le clic sur une barre ou une goutte
+ */
+function handleBarClick(teamId, event) {
+    // Enregistrer le clic pour le combo
+    const now = Date.now();
+    Game.clickHistory.push(now);
+    Game.clickHistory = Game.clickHistory.filter(t => now - t < 1000);
+
+    // Vérifier combo
+    const clicksPerSec = Game.clickHistory.length;
+    const isCombo = clicksPerSec >= Game.comboThreshold;
+
+    if (isCombo && !Game.comboActive) {
+        activateCombo();
+    }
+
+    // Envoyer au serveur
+    socket.emit('click', { teamId });
+
+    // Animation de clic sur la barre
     const bar = document.getElementById(`bar-${teamId}`);
-    if (!bar) return;
+    if (bar) {
+        bar.classList.add('clicking');
+        setTimeout(() => bar.classList.remove('clicking'), 150);
+    }
 
-    const score = GameState.scores[teamId] || 0;
-    const height = calculateBarHeight(score);
+    // Effet visuel +1
+    createClickEffect(event, isCombo);
 
-    bar.style.height = `${height}px`;
-
-    const scoreEl = bar.querySelector('.bar-score');
-    if (scoreEl) {
-        scoreEl.textContent = formatScore(score);
+    // Vibration haptique
+    if (navigator.vibrate) {
+        navigator.vibrate(isCombo ? [15, 5, 15] : 10);
     }
 }
+
+/**
+ * Crée l'effet +1 flottant
+ */
+function createClickEffect(event, isCombo) {
+    const effect = document.createElement('div');
+    effect.className = 'click-effect' + (isCombo ? ' combo' : '');
+    effect.textContent = isCombo ? '+1 🔥' : '+1';
+
+    // Position du clic
+    let x, y;
+    if (event.touches && event.touches.length > 0) {
+        x = event.touches[0].clientX;
+        y = event.touches[0].clientY;
+    } else {
+        x = event.clientX;
+        y = event.clientY;
+    }
+
+    // Ajouter un peu de randomisation
+    x += (Math.random() - 0.5) * 40;
+
+    effect.style.left = `${x}px`;
+    effect.style.top = `${y - 10}px`;
+
+    Game.dom.clickEffects.appendChild(effect);
+
+    setTimeout(() => effect.remove(), 700);
+}
+
+// ============================================================
+// SYSTÈME DE COMBO
+// ============================================================
+
+function activateCombo() {
+    Game.comboActive = true;
+    Game.dom.comboOverlay.classList.remove('hidden');
+
+    setTimeout(() => {
+        Game.dom.comboOverlay.classList.add('hidden');
+    }, 800);
+
+    // Reset après 1 seconde sans clic
+    setTimeout(() => {
+        if (Game.clickHistory.length < Game.comboThreshold) {
+            Game.comboActive = false;
+        }
+    }, 1200);
+}
+
+// ============================================================
+// CALCULS ET RENDU
+// ============================================================
 
 /**
  * Calcule la hauteur d'une barre selon le score
  */
 function calculateBarHeight(score) {
-    const minHeight = 30;
-    const maxHeight = window.innerHeight * 0.6; // 60% de l'écran max
-    const scaleFactor = 0.5; // Pixels par point de score
+    const minHeight = 40;
+    const scaleFactor = 0.3; // px par point
+    const maxHeight = Game.camera.viewportHeight * 0.8;
 
     return Math.min(maxHeight, minHeight + score * scaleFactor);
 }
 
 /**
- * Formate un score pour l'affichage (ex: 1.2k, 15.3M)
+ * Formate un score pour affichage
  */
 function formatScore(score) {
-    if (score >= 1000000) {
-        return (score / 1000000).toFixed(1) + 'M';
-    }
-    if (score >= 1000) {
-        return (score / 1000).toFixed(1) + 'k';
-    }
+    if (score >= 1000000) return (score / 1000000).toFixed(1) + 'M';
+    if (score >= 1000) return (score / 1000).toFixed(1) + 'k';
     return score.toString();
 }
 
 /**
- * Retourne le classement trié
+ * Met à jour la hauteur d'une barre spécifique
  */
-function getRanking() {
-    return Object.entries(GameState.scores)
-        .map(([teamId, score]) => ({ teamId, score }))
-        .sort((a, b) => b.score - a.score);
+function updateBarHeight(teamId) {
+    const bar = document.getElementById(`bar-${teamId}`);
+    if (!bar) return;
+
+    const score = Game.scores[teamId] || 0;
+    const height = calculateBarHeight(score);
+    bar.style.height = `${height}px`;
+}
+
+/**
+ * Met à jour le score affiché sur une barre
+ */
+function updateBarScore(teamId) {
+    const bar = document.getElementById(`bar-${teamId}`);
+    if (!bar) return;
+
+    const scoreEl = bar.querySelector('.bar-score');
+    if (scoreEl) {
+        scoreEl.textContent = formatScore(Game.scores[teamId] || 0);
+    }
+
+    // Mettre à jour aussi la goutte correspondante
+    const drop = document.getElementById(`drop-${teamId}`);
+    if (drop) {
+        const dropScore = drop.querySelector('.drop-score');
+        if (dropScore) {
+            dropScore.textContent = formatScore(Game.scores[teamId] || 0);
+        }
+    }
+}
+
+/**
+ * Met à jour toutes les barres
+ */
+function renderAllBars() {
+    Game.teams.forEach(team => {
+        updateBarHeight(team.id);
+        updateBarScore(team.id);
+    });
 }
 
 // ============================================================
@@ -426,404 +475,153 @@ function getRanking() {
 // ============================================================
 
 /**
- * Met à jour la position de la caméra pour suivre le leader
+ * Calcule et applique la position de la caméra
+ * La caméra suit le leader (pays avec le plus haut score)
  */
 function updateCamera() {
+    // Trouver le leader
     const ranking = getRanking();
     if (ranking.length === 0) return;
 
     const leader = ranking[0];
     const leaderHeight = calculateBarHeight(leader.score);
-    const viewportHeight = GameState.elements.barsContainer.parentElement.offsetHeight;
 
-    // Calculer l'offset pour que le leader soit visible
-    // avec une marge en haut
-    const margin = 150; // pixels de marge au-dessus du leader
-    const targetOffset = Math.max(0, leaderHeight - viewportHeight + margin);
+    // Zone visible : on veut que le haut du leader soit visible avec marge
+    const margin = 120; // Marge en haut pour le label
+    const groundLevel = Game.camera.viewportHeight - 20;
+
+    // Le leader monte = on doit décaler le monde vers le bas
+    // pour que le haut du leader reste visible
+    const leaderTop = groundLevel - leaderHeight;
+    const targetOffset = Math.max(0, margin - leaderTop);
 
     // Interpolation douce
-    GameState.cameraOffset += (targetOffset - GameState.cameraOffset) * 0.1;
+    Game.camera.targetOffsetY = targetOffset;
+    Game.camera.offsetY += (Game.camera.targetOffsetY - Game.camera.offsetY) * 0.1;
 
-    // Appliquer la transformation
-    GameState.elements.barsContainer.style.transform =
-        `translateY(${GameState.cameraOffset}px)`;
+    // Appliquer la transformation (translateY positif = descend le monde = caméra monte)
+    Game.dom.worldContainer.style.transform = `translateY(${Game.camera.offsetY}px)`;
 
-    // Mettre à jour les gouttes (équipes hors viewport)
-    updateDrops(ranking, viewportHeight);
+    // Mettre à jour la visibilité des barres vs gouttes
+    updateDropsVisibility();
 }
 
 /**
- * Met à jour les "gouttes" pour les équipes à la traîne
+ * Détermine quelles barres sont hors écran et affiche les gouttes correspondantes
  */
-function updateDrops(ranking, viewportHeight) {
-    const container = GameState.elements.dropsContainer;
-    container.innerHTML = '';
+function updateDropsVisibility() {
+    const viewportBottom = Game.camera.viewportHeight;
+    const cameraOffset = Game.camera.offsetY;
 
-    const threshold = viewportHeight * GameState.dropThreshold;
+    Game.teams.forEach(team => {
+        const bar = document.getElementById(`bar-${team.id}`);
+        const drop = document.getElementById(`drop-${team.id}`);
+        if (!bar || !drop) return;
 
-    ranking.forEach((entry, index) => {
-        const barHeight = calculateBarHeight(entry.score);
-        const visibleHeight = barHeight - GameState.cameraOffset;
+        const score = Game.scores[team.id] || 0;
+        const barHeight = calculateBarHeight(score);
 
-        // Si la barre est trop basse (hors viewport significativement)
-        if (visibleHeight < threshold && index > 2) { // Garder le top 3 visible
-            const team = getTeam(entry.teamId);
-            if (!team) return;
+        // Position du haut de la barre dans l'espace écran
+        // Le sol est à viewportBottom - 20 - cameraOffset
+        const groundY = viewportBottom - 20;
+        const barTopY = groundY - barHeight + cameraOffset;
 
-            // Masquer la barre
-            const bar = document.getElementById(`bar-${entry.teamId}`);
-            if (bar) {
-                bar.classList.add('hidden-bar');
-            }
+        // Seuil : si le haut de la barre est en dessous du viewport (invisible)
+        // On considère visible si au moins 20px de la barre sont visibles
+        const visiblePart = viewportBottom - (groundY + cameraOffset - barHeight);
+        const isVisible = barTopY < viewportBottom - 60; // 60px = zone gouttes
 
-            // Créer la goutte
-            const drop = document.createElement('div');
-            drop.className = 'team-drop';
-            drop.dataset.teamId = entry.teamId;
-            drop.dataset.score = formatScore(entry.score);
-
-            if (GameState.liveTeams.includes(entry.teamId)) {
-                drop.classList.add('live-match');
-            }
-
-            drop.innerHTML = getFlag(entry.teamId);
-
-            drop.addEventListener('click', () => selectTeam(entry.teamId));
-            container.appendChild(drop);
+        if (isVisible) {
+            // La barre est visible, cacher la goutte
+            drop.classList.remove('visible');
         } else {
-            // S'assurer que la barre est visible
-            const bar = document.getElementById(`bar-${entry.teamId}`);
-            if (bar) {
-                bar.classList.remove('hidden-bar');
-            }
+            // La barre est hors écran, montrer la goutte
+            drop.classList.add('visible');
         }
     });
 }
 
-// ============================================================
-// SÉLECTION D'ÉQUIPE
-// ============================================================
-
-function selectTeam(teamId) {
-    const team = getTeam(teamId);
-    if (!team) return;
-
-    GameState.selectedTeam = teamId;
-
-    // Mettre à jour l'UI du bouton de clic
-    GameState.elements.clickFlag.innerHTML = getFlag(teamId);
-    GameState.elements.clickTeamName.textContent = team.name;
-    updateSelectedTeamScore();
-
-    // Activer le bouton
-    GameState.elements.clickButton.disabled = false;
-
-    // Masquer le sélecteur, afficher la zone de clic
-    hideTeamSelector();
-    showClickZone();
-
-    showToast(`${team.emoji} ${team.name} sélectionné !`, 'success');
-}
-
-function updateSelectedTeamScore() {
-    if (!GameState.selectedTeam) return;
-    const score = GameState.scores[GameState.selectedTeam] || 0;
-    GameState.elements.clickScore.textContent = formatScore(score);
-}
-
-// ============================================================
-// SYSTÈME DE CLIC
-// ============================================================
-
-function handleClick(event) {
-    // Empêcher le comportement par défaut
-    event.preventDefault();
-
-    // Vérifier si on est épuisé
-    if (GameState.isExhausted) {
-        showToast('Récupération en cours...', 'error');
-        return;
-    }
-
-    // Vérifier la stamina
-    if (GameState.stamina <= 0) {
-        triggerExhaustion();
-        return;
-    }
-
-    // Vérifier qu'une équipe est sélectionnée
-    if (!GameState.selectedTeam) {
-        showToast('Sélectionnez une équipe !', 'error');
-        return;
-    }
-
-    // Consommer de la stamina
-    GameState.stamina = Math.max(0, GameState.stamina - 2);
-    updateStaminaBar();
-
-    // Enregistrer le timestamp pour le combo
-    const now = Date.now();
-    GameState.clickTimestamps.push(now);
-
-    // Garder seulement les clics de la dernière seconde
-    GameState.clickTimestamps = GameState.clickTimestamps.filter(
-        t => now - t < 1000
-    );
-
-    // Vérifier le combo
-    const clicksPerSecond = GameState.clickTimestamps.length;
-    const isCombo = clicksPerSecond >= GameState.comboThreshold;
-
-    if (isCombo && !GameState.comboActive) {
-        activateComboMode();
-    } else if (!isCombo && GameState.comboActive) {
-        deactivateComboMode();
-    }
-
-    // Envoyer le clic au serveur
-    socket.emit('click', { teamId: GameState.selectedTeam });
-
-    // Afficher l'effet visuel
-    createClickEffect(event, isCombo);
-
-    // Feedback haptique (si supporté)
-    if (navigator.vibrate) {
-        navigator.vibrate(isCombo ? [20, 10, 20] : 10);
-    }
-}
-
 /**
- * Crée l'effet visuel "+1" flottant
+ * Retourne le classement trié par score
  */
-function createClickEffect(event, isCombo) {
-    const effect = document.createElement('div');
-    effect.className = 'click-effect' + (isCombo ? ' combo' : '');
-    effect.textContent = isCombo ? '+1 🔥' : '+1';
-
-    // Position basée sur le clic
-    const rect = GameState.elements.clickButton.getBoundingClientRect();
-    effect.style.left = `${rect.left + rect.width / 2 + (Math.random() - 0.5) * 60}px`;
-    effect.style.top = `${rect.top - 20}px`;
-
-    GameState.elements.clickEffects.appendChild(effect);
-
-    // Supprimer après l'animation
-    setTimeout(() => effect.remove(), 800);
-}
-
-// ============================================================
-// SYSTÈME DE COMBO
-// ============================================================
-
-function activateComboMode() {
-    GameState.comboActive = true;
-    GameState.elements.clickButton.classList.add('combo-active');
-    GameState.elements.comboOverlay.classList.remove('hidden');
-
-    // Masquer après 1 seconde
-    setTimeout(() => {
-        GameState.elements.comboOverlay.classList.add('hidden');
-    }, 1000);
-}
-
-function deactivateComboMode() {
-    GameState.comboActive = false;
-    GameState.elements.clickButton.classList.remove('combo-active');
-}
-
-// ============================================================
-// SYSTÈME DE STAMINA
-// ============================================================
-
-function updateStaminaBar() {
-    const percentage = (GameState.stamina / GameState.maxStamina) * 100;
-
-    GameState.elements.staminaFill.style.width = `${percentage}%`;
-    GameState.elements.staminaText.textContent = `${Math.round(percentage)}%`;
-
-    // Classes visuelles
-    GameState.elements.staminaFill.classList.remove('low', 'empty');
-    if (percentage <= 0) {
-        GameState.elements.staminaFill.classList.add('empty');
-    } else if (percentage <= 30) {
-        GameState.elements.staminaFill.classList.add('low');
-    }
-}
-
-function triggerExhaustion() {
-    GameState.isExhausted = true;
-    GameState.staminaCooldownEnd = Date.now() + (GameState.settings.staminaCooldown || 3000);
-
-    GameState.elements.staminaWarning.classList.remove('hidden');
-    GameState.elements.clickButton.disabled = true;
-
-    showToast('Épuisé ! Pause de 3 secondes...', 'error');
-}
-
-function recoverStamina() {
-    const now = Date.now();
-
-    // Si épuisé, vérifier si le cooldown est terminé
-    if (GameState.isExhausted) {
-        if (now >= GameState.staminaCooldownEnd) {
-            GameState.isExhausted = false;
-            GameState.stamina = GameState.maxStamina;
-            GameState.elements.staminaWarning.classList.add('hidden');
-            GameState.elements.clickButton.disabled = false;
-            showToast('Énergie restaurée !', 'success');
-        }
-        return;
-    }
-
-    // Régénération normale
-    const regenRate = GameState.settings.staminaRegenRate || 2;
-    if (GameState.stamina < GameState.maxStamina) {
-        GameState.stamina = Math.min(
-            GameState.maxStamina,
-            GameState.stamina + regenRate * 0.016 // ~60 FPS
-        );
-        updateStaminaBar();
-    }
-}
-
-// ============================================================
-// BOUCLE DE JEU
-// ============================================================
-
-let lastFrameTime = 0;
-
-function gameLoop(timestamp) {
-    const deltaTime = timestamp - lastFrameTime;
-    lastFrameTime = timestamp;
-
-    // Régénération de stamina
-    recoverStamina();
-
-    // Mise à jour de la caméra (interpolation)
-    updateCamera();
-
-    // Continuer la boucle
-    requestAnimationFrame(gameLoop);
+function getRanking() {
+    return Object.entries(Game.scores)
+        .map(([teamId, score]) => ({ teamId, score }))
+        .sort((a, b) => b.score - a.score);
 }
 
 // ============================================================
 // MISE À JOUR DE L'UI
 // ============================================================
 
-function updateBackground() {
-    document.body.dataset.background = GameState.backgroundLevel;
+function updateUI() {
+    updateBackground();
+    updateLiveIndicator();
+    updateLeaderDisplay();
+    Game.dom.usersCount.textContent = Game.connectedUsers;
 }
 
-function updateUsersCount() {
-    GameState.elements.usersCount.textContent = GameState.connectedUsers;
+function updateBackground() {
+    document.body.dataset.background = Game.backgroundLevel;
 }
 
 function updateLiveIndicator() {
-    const indicator = GameState.elements.liveIndicator;
-    const textEl = GameState.elements.liveMatchText;
+    const indicator = Game.dom.liveIndicator;
+    const text = Game.dom.liveMatchText;
 
-    if (GameState.liveTeams.length > 0) {
+    if (Game.liveTeams.length > 0) {
         indicator.classList.add('active');
-
-        // Afficher les équipes en match
-        const teams = GameState.liveTeams
-            .map(id => getTeam(id))
-            .filter(t => t)
-            .map(t => t.emoji)
+        const emojis = Game.liveTeams
+            .map(id => Game.teams.find(t => t.id === id)?.emoji)
+            .filter(Boolean)
             .join(' vs ');
-
-        textEl.textContent = `LIVE: ${teams}`;
+        text.textContent = `LIVE: ${emojis}`;
     } else {
         indicator.classList.remove('active');
-        textEl.textContent = 'Aucun match en direct';
+        text.textContent = 'Aucun match en direct';
     }
 }
 
-function updateLiveMatchHighlights() {
-    // Mettre à jour les classes sur les barres
+function updateLiveHighlights() {
+    // Barres
     document.querySelectorAll('.team-bar').forEach(bar => {
         const teamId = bar.dataset.teamId;
-        if (GameState.liveTeams.includes(teamId)) {
-            bar.classList.add('live-match');
-        } else {
-            bar.classList.remove('live-match');
-        }
+        bar.classList.toggle('live-match', Game.liveTeams.includes(teamId));
     });
 
-    // Mettre à jour les cartes de sélection
-    document.querySelectorAll('.team-select-card').forEach(card => {
-        const teamId = card.dataset.teamId;
-        if (GameState.liveTeams.includes(teamId)) {
-            card.classList.add('live-match');
-        } else {
-            card.classList.remove('live-match');
-        }
+    // Gouttes
+    document.querySelectorAll('.team-drop').forEach(drop => {
+        const teamId = drop.dataset.teamId;
+        drop.classList.toggle('live-match', Game.liveTeams.includes(teamId));
     });
 }
 
-function updateRankingPanel(ranking) {
-    const list = GameState.elements.rankingList;
-    list.innerHTML = '';
+function updateLeaderDisplay() {
+    const ranking = getRanking();
+    if (ranking.length === 0) return;
 
-    ranking.forEach((entry, index) => {
-        const team = getTeam(entry.teamId);
-        if (!team) return;
+    const leader = ranking[0];
+    const team = Game.teams.find(t => t.id === leader.teamId);
 
-        const item = document.createElement('div');
-        item.className = 'ranking-item';
-
-        if (index < 3) item.classList.add('top-3');
-        if (GameState.liveTeams.includes(entry.teamId)) {
-            item.classList.add('live-match');
-        }
-
-        item.innerHTML = `
-            <span class="ranking-position">${index + 1}</span>
-            <span class="ranking-flag">${getFlag(entry.teamId)}</span>
-            <div class="ranking-info">
-                <span class="ranking-name">${team.name}</span>
-            </div>
-            <span class="ranking-score">${formatScore(entry.score)}</span>
-        `;
-
-        list.appendChild(item);
-    });
+    if (team) {
+        Game.dom.leaderName.textContent = `${team.emoji} ${team.shortName}`;
+        Game.dom.leaderScore.textContent = formatScore(leader.score);
+    }
 }
 
 // ============================================================
-// GESTION DE L'AFFICHAGE
+// ÉCRAN DE CHARGEMENT
 // ============================================================
 
 function hideLoadingScreen() {
-    const screen = GameState.elements.loadingScreen;
-    screen.classList.add('fade-out');
+    Game.dom.loadingScreen.classList.add('fade-out');
     setTimeout(() => {
-        screen.classList.add('hidden');
+        Game.dom.loadingScreen.classList.add('hidden');
     }, 500);
 }
 
-function showTeamSelector() {
-    GameState.elements.teamSelector.classList.remove('hidden');
-}
-
-function hideTeamSelector() {
-    GameState.elements.teamSelector.classList.add('hidden');
-}
-
-function showClickZone() {
-    GameState.elements.clickZone.classList.remove('hidden');
-}
-
-function hideClickZone() {
-    GameState.elements.clickZone.classList.add('hidden');
-}
-
-function toggleRankingPanel() {
-    GameState.elements.rankingPanel.classList.toggle('hidden');
-}
-
 // ============================================================
-// NOTIFICATIONS TOAST
+// NOTIFICATIONS
 // ============================================================
 
 function showToast(message, type = 'info') {
@@ -831,132 +629,72 @@ function showToast(message, type = 'info') {
     toast.className = `toast ${type}`;
     toast.textContent = message;
 
-    GameState.elements.toastContainer.appendChild(toast);
+    Game.dom.toastContainer.appendChild(toast);
 
-    // Supprimer après 3 secondes
     setTimeout(() => toast.remove(), 3000);
 }
 
 // ============================================================
-// EVENT LISTENERS
+// ÉVÉNEMENTS
 // ============================================================
 
-function setupEventListeners() {
-    // Bouton de clic principal
-    GameState.elements.clickButton.addEventListener('click', handleClick);
-    GameState.elements.clickButton.addEventListener('touchstart', handleClick, { passive: false });
-
-    // Empêcher le double-tap zoom sur mobile
-    GameState.elements.clickButton.addEventListener('touchend', (e) => {
-        e.preventDefault();
+function setupEvents() {
+    // Redimensionnement
+    window.addEventListener('resize', () => {
+        updateViewportDimensions();
     });
 
-    // Changer d'équipe
-    GameState.elements.changeTeamBtn.addEventListener('click', () => {
-        hideClickZone();
-        renderTeamSelector(); // Rafraîchir les scores
-        showTeamSelector();
+    // Synchronisation scroll horizontal gouttes avec world
+    Game.dom.worldViewport.addEventListener('scroll', () => {
+        // Synchroniser la position X des gouttes avec le scroll du monde
+        const scrollX = Game.dom.worldViewport.scrollLeft;
+        Game.dom.dropsContainer.style.transform = `translateX(-${scrollX}px)`;
     });
 
-    // Toggle classement
-    GameState.elements.rankingToggle.addEventListener('click', toggleRankingPanel);
-    GameState.elements.closeRanking.addEventListener('click', toggleRankingPanel);
-
-    // Fermer le classement en cliquant ailleurs
-    document.addEventListener('click', (e) => {
-        const panel = GameState.elements.rankingPanel;
-        const toggle = GameState.elements.rankingToggle;
-
-        if (!panel.classList.contains('hidden') &&
-            !panel.contains(e.target) &&
-            !toggle.contains(e.target)) {
-            panel.classList.add('hidden');
-        }
-    });
-
-    // Raccourcis clavier
-    document.addEventListener('keydown', (e) => {
-        // Espace ou Entrée pour cliquer
-        if ((e.code === 'Space' || e.code === 'Enter') &&
-            !GameState.elements.teamSelector.classList.contains('hidden') === false) {
-            e.preventDefault();
-            handleClick(e);
-        }
-
-        // Échap pour fermer les panneaux
-        if (e.code === 'Escape') {
-            if (!GameState.elements.rankingPanel.classList.contains('hidden')) {
-                GameState.elements.rankingPanel.classList.add('hidden');
-            }
-        }
-
-        // R pour ouvrir le classement
-        if (e.code === 'KeyR') {
-            toggleRankingPanel();
-        }
-    });
-
-    // Gestion de la visibilité de l'onglet
+    // Visibilité onglet
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-            // Re-synchroniser quand on revient
             socket.emit('sync-request');
         }
     });
 
-    // Redimensionnement
-    window.addEventListener('resize', () => {
-        GameState.viewportHeight = window.innerHeight;
-        updateCamera();
-    });
-
-    // Initialiser la hauteur du viewport
-    GameState.viewportHeight = window.innerHeight;
-}
-
-// ============================================================
-// UTILITAIRES
-// ============================================================
-
-/**
- * Debounce une fonction
- */
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-/**
- * Throttle une fonction
- */
-function throttle(func, limit) {
-    let inThrottle;
-    return function executedFunction(...args) {
-        if (!inThrottle) {
-            func(...args);
-            inThrottle = true;
-            setTimeout(() => inThrottle = false, limit);
+    // Empêcher le zoom sur double-tap mobile
+    document.addEventListener('touchend', (e) => {
+        if (e.target.closest('.team-bar') || e.target.closest('.team-drop')) {
+            e.preventDefault();
         }
-    };
+    }, { passive: false });
 }
 
 // ============================================================
-// EXPORT POUR DEBUG (optionnel)
+// BOUCLE DE JEU
+// ============================================================
+
+let lastFrame = 0;
+
+function gameLoop(timestamp) {
+    const delta = timestamp - lastFrame;
+    lastFrame = timestamp;
+
+    // Mise à jour caméra
+    updateCamera();
+
+    // Désactiver combo si plus de clics
+    if (Game.comboActive && Game.clickHistory.length < Game.comboThreshold) {
+        Game.comboActive = false;
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+// ============================================================
+// DEBUG (optionnel)
 // ============================================================
 
 window.CANClicker = {
-    state: GameState,
-    socket: () => socket,
-    selectTeam,
-    getTeam,
-    getRanking
+    game: Game,
+    getRanking,
+    socket: () => socket
 };
 
-console.log('🎮 CAN Clicker chargé - window.CANClicker disponible pour debug');
+console.log('🎮 CAN Clicker v2 chargé - window.CANClicker disponible');
