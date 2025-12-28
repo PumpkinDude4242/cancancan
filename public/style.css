@@ -390,11 +390,12 @@ body[data-background="moon"]::after {
     display: block;
 }
 
-/* Partie inferieure : La Trainee */
+/* Partie inferieure : La Trainee (gradient horizontal = derniere ligne du drapeau etiree) */
 .bar-trail-section {
     flex: 1;
     width: 100%;
-    background-color: var(--trail-color);
+    background: var(--trail-color);
+    background-size: 100% 100%;
     position: relative;
     min-height: 20px;
 }
