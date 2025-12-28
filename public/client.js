@@ -1,46 +1,49 @@
 /**
- * CAN Clicker Game - Client v2
- * Nouvelle UX: Clic direct sur barres, caméra verticale suivant le leader, système de gouttes
+ * CAN Clicker Game - Client v3
+ * Design "Flag-Trail" : Drapeau en haut, trainee coloree extraite via Canvas
  *
- * Vanilla JS optimisé pour performance
+ * Vanilla JS optimise pour performance
  */
 
 // ============================================================
-// ÉTAT GLOBAL DU JEU
+// ETAT GLOBAL DU JEU
 // ============================================================
 
 const Game = {
-    // Données serveur
+    // Donnees serveur
     teams: [],
     matches: [],
     settings: {},
     scores: {},
     liveTeams: [],
 
-    // État UI
+    // Couleurs extraites des drapeaux (teamId -> hex color)
+    trailColors: {},
+
+    // Etat UI
     connectedUsers: 0,
     backgroundLevel: 'stadium',
 
     // Configuration visuelle
-    clickMultiplier: 10,      // Multiplicateur de hauteur visuelle (px par clic)
+    clickMultiplier: 10,
 
-    // Système de caméra
+    // Systeme de camera
     camera: {
-        offsetY: 0,           // Décalage vertical actuel (positif = monte)
-        targetOffsetY: 0,     // Cible pour interpolation
-        viewportHeight: 0,    // Hauteur visible
-        groundY: 0            // Position Y du sol dans le viewport
+        offsetY: 0,
+        targetOffsetY: 0,
+        viewportHeight: 0,
+        groundY: 0
     },
 
-    // Système de combo
-    clickHistory: [],         // Timestamps des derniers clics
+    // Systeme de combo
+    clickHistory: [],
     comboActive: false,
-    comboThreshold: 5,        // Clics/seconde pour combo
+    comboThreshold: 5,
 
-    // Cache des images de drapeaux (succès/échec)
+    // Cache des images de drapeaux
     flagImageCache: {},
 
-    // Références DOM (cache)
+    // References DOM (cache)
     dom: {}
 };
 
@@ -52,9 +55,9 @@ let socket = null;
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🏆 CAN Clicker v2 - Initialisation...');
+    console.log('🏆 CAN Clicker v3 - Flag-Trail Design - Initialisation...');
 
-    // Cache des éléments DOM
+    // Cache des elements DOM
     cacheDOM();
 
     // Dimensions initiales
@@ -63,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Socket.io
     initSocket();
 
-    // Charger les données
+    // Charger les donnees
     loadGameData();
 
     // Event listeners
@@ -74,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Cache les références DOM pour éviter les queries répétées
+ * Cache les references DOM pour eviter les queries repetees
  */
 function cacheDOM() {
     Game.dom = {
@@ -95,15 +98,15 @@ function cacheDOM() {
 }
 
 /**
- * Met à jour les dimensions du viewport
+ * Met a jour les dimensions du viewport
  */
 function updateViewportDimensions() {
-    Game.camera.viewportHeight = window.innerHeight - 50; // Moins header
-    Game.camera.groundY = Game.camera.viewportHeight - 20; // 20px pour le sol
+    Game.camera.viewportHeight = window.innerHeight - 50;
+    Game.camera.groundY = Game.camera.viewportHeight - 20;
 }
 
 // ============================================================
-// SOCKET.IO - TEMPS RÉEL
+// SOCKET.IO - TEMPS REEL
 // ============================================================
 
 function initSocket() {
@@ -114,12 +117,12 @@ function initSocket() {
     });
 
     socket.on('connect', () => {
-        console.log('🔌 Connecté au serveur');
-        showToast('Connecté !', 'success');
+        console.log('🔌 Connecte au serveur');
+        showToast('Connecte !', 'success');
     });
 
     socket.on('init', (data) => {
-        console.log('📦 État initial reçu');
+        console.log('📦 Etat initial recu');
         Game.scores = data.scores;
         Game.liveTeams = data.liveTeams || [];
         Game.backgroundLevel = data.backgroundLevel;
@@ -137,7 +140,6 @@ function initSocket() {
             updateBackground();
         }
 
-        // Mise à jour de la barre concernée
         updateBarHeight(data.teamId);
         updateBarScore(data.teamId);
         updateLeaderDisplay();
@@ -176,18 +178,18 @@ function initSocket() {
     });
 
     socket.on('disconnect', () => {
-        console.log('❌ Déconnecté');
+        console.log('❌ Deconnecte');
         showToast('Connexion perdue...', 'error');
     });
 
     socket.on('reconnect', () => {
-        showToast('Reconnecté !', 'success');
+        showToast('Reconnecte !', 'success');
         socket.emit('sync-request');
     });
 }
 
 // ============================================================
-// CHARGEMENT DES DONNÉES
+// CHARGEMENT DES DONNEES
 // ============================================================
 
 async function loadGameData() {
@@ -205,19 +207,22 @@ async function loadGameData() {
         Game.comboThreshold = data.settings?.comboThreshold || 5;
         Game.clickMultiplier = data.settings?.click_multiplier || 10;
 
-        console.log(`✅ ${Game.teams.length} équipes actives chargées (multiplier: ${Game.clickMultiplier})`);
+        console.log(`✅ ${Game.teams.length} equipes actives chargees (multiplier: ${Game.clickMultiplier})`);
 
-        // Précharger les images de drapeaux
+        // Precharger les images de drapeaux
         preloadFlagImages();
 
-        // Générer les barres et gouttes
+        // Extraire les couleurs des drapeaux via Canvas
+        await extractAllFlagColors();
+
+        // Generer les barres et gouttes
         createBars();
         createDrops();
 
         // UI initiale
         updateUI();
 
-        // Cacher l'écran de chargement
+        // Cacher l'ecran de chargement
         hideLoadingScreen();
 
     } catch (error) {
@@ -227,14 +232,13 @@ async function loadGameData() {
 }
 
 /**
- * Précharge les images de drapeaux et met en cache leur disponibilité
+ * Precharge les images de drapeaux et met en cache leur disponibilite
  */
 function preloadFlagImages() {
     Game.teams.forEach(team => {
         const img = new Image();
         img.onload = () => {
             Game.flagImageCache[team.id] = true;
-            // Mettre à jour le drapeau si déjà rendu
             updateFlagDisplay(team.id);
         };
         img.onerror = () => {
@@ -245,7 +249,7 @@ function preloadFlagImages() {
 }
 
 /**
- * Met à jour l'affichage du drapeau (image ou emoji) pour une équipe
+ * Met a jour l'affichage du drapeau pour une equipe
  */
 function updateFlagDisplay(teamId) {
     const team = Game.teams.find(t => t.id === teamId);
@@ -268,17 +272,169 @@ function updateFlagDisplay(teamId) {
 }
 
 // ============================================================
-// CRÉATION DES ÉLÉMENTS
+// EXTRACTION DES COULEURS VIA CANVAS
 // ============================================================
 
 /**
- * Crée toutes les barres des équipes
+ * Extrait la couleur du bas de chaque drapeau
+ */
+async function extractAllFlagColors() {
+    console.log('🎨 Extraction des couleurs des drapeaux...');
+
+    const promises = Game.teams.map(team => extractFlagBottomColor(team));
+    await Promise.all(promises);
+
+    console.log('✅ Couleurs extraites:', Game.trailColors);
+}
+
+/**
+ * Charge une image de drapeau et extrait la couleur moyenne de la derniere ligne
+ */
+function extractFlagBottomColor(team) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                canvas.width = img.width;
+                canvas.height = img.height;
+
+                ctx.drawImage(img, 0, 0);
+
+                const bottomY = img.height - 1;
+                const imageData = ctx.getImageData(0, bottomY, img.width, 1);
+                const pixels = imageData.data;
+
+                const color = calculateDominantColor(pixels, img.width);
+                Game.trailColors[team.id] = color;
+
+                console.log(`  🏳️ ${team.shortName}: ${color}`);
+            } catch (e) {
+                console.warn(`⚠️ Impossible d'analyser ${team.id}, utilisation couleur fallback`);
+                Game.trailColors[team.id] = team.colors[2] || team.colors[0] || '#333333';
+            }
+            resolve();
+        };
+
+        img.onerror = () => {
+            console.warn(`⚠️ Image non trouvee pour ${team.id}`);
+            Game.trailColors[team.id] = team.colors[2] || team.colors[0] || '#333333';
+            resolve();
+        };
+
+        img.src = team.flagUrl || `/assets/flags/${team.id}.png`;
+    });
+}
+
+/**
+ * Calcule la couleur dominante d'une ligne de pixels
+ */
+function calculateDominantColor(pixels, width) {
+    let totalR = 0, totalG = 0, totalB = 0;
+    let count = 0;
+
+    const colorCounts = {};
+
+    for (let i = 0; i < width * 4; i += 4) {
+        const r = pixels[i];
+        const g = pixels[i + 1];
+        const b = pixels[i + 2];
+        const a = pixels[i + 3];
+
+        if (a < 128) continue;
+
+        const qR = Math.round(r / 32) * 32;
+        const qG = Math.round(g / 32) * 32;
+        const qB = Math.round(b / 32) * 32;
+        const key = `${qR},${qG},${qB}`;
+
+        colorCounts[key] = (colorCounts[key] || 0) + 1;
+
+        totalR += r;
+        totalG += g;
+        totalB += b;
+        count++;
+    }
+
+    if (count === 0) {
+        return '#333333';
+    }
+
+    let maxCount = 0;
+    let dominantKey = null;
+
+    for (const [key, cnt] of Object.entries(colorCounts)) {
+        if (cnt > maxCount) {
+            maxCount = cnt;
+            dominantKey = key;
+        }
+    }
+
+    if (dominantKey && maxCount > count * 0.3) {
+        const [qR, qG, qB] = dominantKey.split(',').map(Number);
+
+        let preciseR = 0, preciseG = 0, preciseB = 0, preciseCount = 0;
+
+        for (let i = 0; i < width * 4; i += 4) {
+            const r = pixels[i];
+            const g = pixels[i + 1];
+            const b = pixels[i + 2];
+            const a = pixels[i + 3];
+
+            if (a < 128) continue;
+
+            const pqR = Math.round(r / 32) * 32;
+            const pqG = Math.round(g / 32) * 32;
+            const pqB = Math.round(b / 32) * 32;
+
+            if (pqR === qR && pqG === qG && pqB === qB) {
+                preciseR += r;
+                preciseG += g;
+                preciseB += b;
+                preciseCount++;
+            }
+        }
+
+        if (preciseCount > 0) {
+            const avgR = Math.round(preciseR / preciseCount);
+            const avgG = Math.round(preciseG / preciseCount);
+            const avgB = Math.round(preciseB / preciseCount);
+            return rgbToHex(avgR, avgG, avgB);
+        }
+    }
+
+    const avgR = Math.round(totalR / count);
+    const avgG = Math.round(totalG / count);
+    const avgB = Math.round(totalB / count);
+
+    return rgbToHex(avgR, avgG, avgB);
+}
+
+/**
+ * Convertit RGB en hexadecimal
+ */
+function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(x => {
+        const hex = x.toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+    }).join('');
+}
+
+// ============================================================
+// CREATION DES ELEMENTS
+// ============================================================
+
+/**
+ * Cree toutes les barres des equipes avec le design Flag-Trail
  */
 function createBars() {
     const ground = Game.dom.ground;
     ground.innerHTML = '';
 
-    // Trier par nom pour ordre cohérent
     const sortedTeams = [...Game.teams].sort((a, b) =>
         a.name.localeCompare(b.name, 'fr')
     );
@@ -290,30 +446,31 @@ function createBars() {
         bar.dataset.teamId = team.id;
         bar.dataset.index = index;
 
-        // Couleurs du drapeau
-        bar.style.setProperty('--color-1', team.colors[0]);
-        bar.style.setProperty('--color-2', team.colors[1]);
-        bar.style.setProperty('--color-3', team.colors[2]);
+        const trailColor = Game.trailColors[team.id] || team.colors[2] || '#333333';
+        bar.style.setProperty('--trail-color', trailColor);
 
-        // Hauteur initiale
         const height = calculateBarHeight(Game.scores[team.id] || 0);
         bar.style.height = `${height}px`;
 
-        // Match en direct ?
         if (Game.liveTeams.includes(team.id)) {
             bar.classList.add('live-match');
         }
 
-        // Label (drapeau + score + nom)
+        const flagSrc = team.flagUrl || `/assets/flags/${team.id}.png`;
+
         bar.innerHTML = `
             <div class="bar-label">
-                <span class="bar-flag">${team.emoji}</span>
                 <span class="bar-score">${formatScore(Game.scores[team.id] || 0)}</span>
                 <span class="bar-name">${team.shortName}</span>
             </div>
+            <div class="bar-container">
+                <div class="bar-flag-section">
+                    <img class="bar-flag-img" src="${flagSrc}" alt="${team.name}" draggable="false" onerror="this.style.display='none'">
+                </div>
+                <div class="bar-trail-section"></div>
+            </div>
         `;
 
-        // Événement clic
         bar.addEventListener('click', (e) => handleBarClick(team.id, e));
         bar.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -325,13 +482,12 @@ function createBars() {
 }
 
 /**
- * Crée les gouttes (placeholders, visibilité gérée dynamiquement)
+ * Cree les gouttes
  */
 function createDrops() {
     const container = Game.dom.dropsContainer;
     container.innerHTML = '';
 
-    // Même ordre que les barres
     const sortedTeams = [...Game.teams].sort((a, b) =>
         a.name.localeCompare(b.name, 'fr')
     );
@@ -343,7 +499,6 @@ function createDrops() {
         drop.dataset.teamId = team.id;
         drop.dataset.index = index;
 
-        // Match en direct ?
         if (Game.liveTeams.includes(team.id)) {
             drop.classList.add('live-match');
         }
@@ -353,7 +508,6 @@ function createDrops() {
             <span class="drop-score">${formatScore(Game.scores[team.id] || 0)}</span>
         `;
 
-        // Clic sur goutte = clic pour le pays
         drop.addEventListener('click', (e) => handleBarClick(team.id, e));
         drop.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -368,16 +522,11 @@ function createDrops() {
 // GESTION DES CLICS
 // ============================================================
 
-/**
- * Gère le clic sur une barre ou une goutte
- */
 function handleBarClick(teamId, event) {
-    // Enregistrer le clic pour le combo
     const now = Date.now();
     Game.clickHistory.push(now);
     Game.clickHistory = Game.clickHistory.filter(t => now - t < 1000);
 
-    // Vérifier combo
     const clicksPerSec = Game.clickHistory.length;
     const isCombo = clicksPerSec >= Game.comboThreshold;
 
@@ -385,34 +534,26 @@ function handleBarClick(teamId, event) {
         activateCombo();
     }
 
-    // Envoyer au serveur
     socket.emit('click', { teamId });
 
-    // Animation de clic sur la barre
     const bar = document.getElementById(`bar-${teamId}`);
     if (bar) {
         bar.classList.add('clicking');
         setTimeout(() => bar.classList.remove('clicking'), 150);
     }
 
-    // Effet visuel +1
     createClickEffect(event, isCombo);
 
-    // Vibration haptique
     if (navigator.vibrate) {
         navigator.vibrate(isCombo ? [15, 5, 15] : 10);
     }
 }
 
-/**
- * Crée l'effet +1 flottant
- */
 function createClickEffect(event, isCombo) {
     const effect = document.createElement('div');
     effect.className = 'click-effect' + (isCombo ? ' combo' : '');
     effect.textContent = isCombo ? '+1 🔥' : '+1';
 
-    // Position du clic
     let x, y;
     if (event.touches && event.touches.length > 0) {
         x = event.touches[0].clientX;
@@ -422,7 +563,6 @@ function createClickEffect(event, isCombo) {
         y = event.clientY;
     }
 
-    // Ajouter un peu de randomisation
     x += (Math.random() - 0.5) * 40;
 
     effect.style.left = `${x}px`;
@@ -434,7 +574,7 @@ function createClickEffect(event, isCombo) {
 }
 
 // ============================================================
-// SYSTÈME DE COMBO
+// SYSTEME DE COMBO
 // ============================================================
 
 function activateCombo() {
@@ -445,7 +585,6 @@ function activateCombo() {
         Game.dom.comboOverlay.classList.add('hidden');
     }, 800);
 
-    // Reset après 1 seconde sans clic
     setTimeout(() => {
         if (Game.clickHistory.length < Game.comboThreshold) {
             Game.comboActive = false;
@@ -459,30 +598,22 @@ function activateCombo() {
 
 /**
  * Calcule la hauteur d'une barre selon le score
- * Utilise le click_multiplier du serveur pour un impact visuel satisfaisant
+ * Utilise le click_multiplier pour un scaling visuel important
  */
 function calculateBarHeight(score) {
-    const minHeight = 40;
-    // Utilise le click_multiplier pour un scaling visuel important
-    // click_multiplier = 10 signifie +10px par clic (très visible)
+    const minHeight = 80; // Pour accommoder le drapeau Flag-Trail
     const scaleFactor = Game.clickMultiplier || 10;
-    const maxHeight = Game.camera.viewportHeight * 3; // Permet de monter très haut
+    const maxHeight = Game.camera.viewportHeight * 3;
 
     return Math.min(maxHeight, minHeight + score * scaleFactor);
 }
 
-/**
- * Formate un score pour affichage
- */
 function formatScore(score) {
     if (score >= 1000000) return (score / 1000000).toFixed(1) + 'M';
     if (score >= 1000) return (score / 1000).toFixed(1) + 'k';
     return score.toString();
 }
 
-/**
- * Met à jour la hauteur d'une barre spécifique
- */
 function updateBarHeight(teamId) {
     const bar = document.getElementById(`bar-${teamId}`);
     if (!bar) return;
@@ -492,9 +623,6 @@ function updateBarHeight(teamId) {
     bar.style.height = `${height}px`;
 }
 
-/**
- * Met à jour le score affiché sur une barre
- */
 function updateBarScore(teamId) {
     const bar = document.getElementById(`bar-${teamId}`);
     if (!bar) return;
@@ -504,7 +632,6 @@ function updateBarScore(teamId) {
         scoreEl.textContent = formatScore(Game.scores[teamId] || 0);
     }
 
-    // Mettre à jour aussi la goutte correspondante
     const drop = document.getElementById(`drop-${teamId}`);
     if (drop) {
         const dropScore = drop.querySelector('.drop-score');
@@ -514,9 +641,6 @@ function updateBarScore(teamId) {
     }
 }
 
-/**
- * Met à jour toutes les barres
- */
 function renderAllBars() {
     Game.teams.forEach(team => {
         updateBarHeight(team.id);
@@ -525,44 +649,30 @@ function renderAllBars() {
 }
 
 // ============================================================
-// LOGIQUE DE CAMÉRA
+// LOGIQUE DE CAMERA
 // ============================================================
 
-/**
- * Calcule et applique la position de la caméra
- * La caméra suit le leader (pays avec le plus haut score)
- */
 function updateCamera() {
-    // Trouver le leader
     const ranking = getRanking();
     if (ranking.length === 0) return;
 
     const leader = ranking[0];
     const leaderHeight = calculateBarHeight(leader.score);
 
-    // Zone visible : on veut que le haut du leader soit visible avec marge
-    const margin = 120; // Marge en haut pour le label
+    const margin = 150;
     const groundLevel = Game.camera.viewportHeight - 20;
 
-    // Le leader monte = on doit décaler le monde vers le bas
-    // pour que le haut du leader reste visible
     const leaderTop = groundLevel - leaderHeight;
     const targetOffset = Math.max(0, margin - leaderTop);
 
-    // Interpolation douce
     Game.camera.targetOffsetY = targetOffset;
     Game.camera.offsetY += (Game.camera.targetOffsetY - Game.camera.offsetY) * 0.1;
 
-    // Appliquer la transformation (translateY positif = descend le monde = caméra monte)
     Game.dom.worldContainer.style.transform = `translateY(${Game.camera.offsetY}px)`;
 
-    // Mettre à jour la visibilité des barres vs gouttes
     updateDropsVisibility();
 }
 
-/**
- * Détermine quelles barres sont hors écran et affiche les gouttes correspondantes
- */
 function updateDropsVisibility() {
     const viewportBottom = Game.camera.viewportHeight;
     const cameraOffset = Game.camera.offsetY;
@@ -575,29 +685,19 @@ function updateDropsVisibility() {
         const score = Game.scores[team.id] || 0;
         const barHeight = calculateBarHeight(score);
 
-        // Position du haut de la barre dans l'espace écran
-        // Le sol est à viewportBottom - 20 - cameraOffset
         const groundY = viewportBottom - 20;
         const barTopY = groundY - barHeight + cameraOffset;
 
-        // Seuil : si le haut de la barre est en dessous du viewport (invisible)
-        // On considère visible si au moins 20px de la barre sont visibles
-        const visiblePart = viewportBottom - (groundY + cameraOffset - barHeight);
-        const isVisible = barTopY < viewportBottom - 60; // 60px = zone gouttes
+        const isVisible = barTopY < viewportBottom - 60;
 
         if (isVisible) {
-            // La barre est visible, cacher la goutte
             drop.classList.remove('visible');
         } else {
-            // La barre est hors écran, montrer la goutte
             drop.classList.add('visible');
         }
     });
 }
 
-/**
- * Retourne le classement trié par score
- */
 function getRanking() {
     return Object.entries(Game.scores)
         .map(([teamId, score]) => ({ teamId, score }))
@@ -605,7 +705,7 @@ function getRanking() {
 }
 
 // ============================================================
-// MISE À JOUR DE L'UI
+// MISE A JOUR DE L'UI
 // ============================================================
 
 function updateUI() {
@@ -637,13 +737,11 @@ function updateLiveIndicator() {
 }
 
 function updateLiveHighlights() {
-    // Barres
     document.querySelectorAll('.team-bar').forEach(bar => {
         const teamId = bar.dataset.teamId;
         bar.classList.toggle('live-match', Game.liveTeams.includes(teamId));
     });
 
-    // Gouttes
     document.querySelectorAll('.team-drop').forEach(drop => {
         const teamId = drop.dataset.teamId;
         drop.classList.toggle('live-match', Game.liveTeams.includes(teamId));
@@ -664,7 +762,7 @@ function updateLeaderDisplay() {
 }
 
 // ============================================================
-// ÉCRAN DE CHARGEMENT
+// ECRAN DE CHARGEMENT
 // ============================================================
 
 function hideLoadingScreen() {
@@ -689,30 +787,25 @@ function showToast(message, type = 'info') {
 }
 
 // ============================================================
-// ÉVÉNEMENTS
+// EVENEMENTS
 // ============================================================
 
 function setupEvents() {
-    // Redimensionnement
     window.addEventListener('resize', () => {
         updateViewportDimensions();
     });
 
-    // Synchronisation scroll horizontal gouttes avec world
     Game.dom.worldViewport.addEventListener('scroll', () => {
-        // Synchroniser la position X des gouttes avec le scroll du monde
         const scrollX = Game.dom.worldViewport.scrollLeft;
         Game.dom.dropsContainer.style.transform = `translateX(-${scrollX}px)`;
     });
 
-    // Visibilité onglet
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             socket.emit('sync-request');
         }
     });
 
-    // Empêcher le zoom sur double-tap mobile
     document.addEventListener('touchend', (e) => {
         if (e.target.closest('.team-bar') || e.target.closest('.team-drop')) {
             e.preventDefault();
@@ -730,10 +823,8 @@ function gameLoop(timestamp) {
     const delta = timestamp - lastFrame;
     lastFrame = timestamp;
 
-    // Mise à jour caméra
     updateCamera();
 
-    // Désactiver combo si plus de clics
     if (Game.comboActive && Game.clickHistory.length < Game.comboThreshold) {
         Game.comboActive = false;
     }
@@ -742,13 +833,14 @@ function gameLoop(timestamp) {
 }
 
 // ============================================================
-// DEBUG (optionnel)
+// DEBUG
 // ============================================================
 
 window.CANClicker = {
     game: Game,
     getRanking,
-    socket: () => socket
+    socket: () => socket,
+    trailColors: () => Game.trailColors
 };
 
-console.log('🎮 CAN Clicker v2 chargé - window.CANClicker disponible');
+console.log('🎮 CAN Clicker v3 charge - window.CANClicker disponible');

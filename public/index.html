@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="CAN Clicker - Supportez votre équipe africaine préférée !">
+    <meta name="description" content="CAN Clicker 2025 - Supportez votre equipe africaine preferee pour la Coupe d'Afrique des Nations au Maroc !">
     <meta name="theme-color" content="#1a1a2e">
 
     <!-- Open Graph pour partage viral -->
-    <meta property="og:title" content="CAN Clicker Game">
-    <meta property="og:description" content="Cliquez pour soutenir votre équipe ! Qui sera le champion ?">
+    <meta property="og:title" content="CAN Clicker 2025">
+    <meta property="og:description" content="Cliquez pour soutenir votre equipe ! Qui sera le champion de la CAN 2025 ?">
     <meta property="og:type" content="website">
 
-    <title>CAN Clicker - Coupe d'Afrique des Nations</title>
+    <title>CAN Clicker 2025 - Coupe d'Afrique des Nations</title>
 
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
     <link rel="stylesheet" href="style.css">
@@ -19,13 +19,13 @@
 <body data-background="stadium">
 
     <!-- ============================================= -->
-    <!-- ÉCRAN DE CHARGEMENT                          -->
+    <!-- ECRAN DE CHARGEMENT                          -->
     <!-- ============================================= -->
     <div id="loading-screen">
         <div class="loading-content">
             <div class="loading-trophy">🏆</div>
-            <h1>CAN CLICKER</h1>
-            <p>Chargement des équipes...</p>
+            <h1>CAN CLICKER 2025</h1>
+            <p>Chargement des equipes...</p>
             <div class="loading-bar">
                 <div class="loading-progress"></div>
             </div>
@@ -38,7 +38,7 @@
     <header id="header">
         <div class="header-left">
             <span class="logo">🏆</span>
-            <h1 class="title">CAN CLICKER</h1>
+            <h1 class="title">CAN 2025</h1>
         </div>
         <div class="header-center">
             <div class="live-indicator" id="live-indicator">
@@ -59,9 +59,9 @@
     <!-- ============================================= -->
     <div id="world-viewport">
         <div id="world-container">
-            <!-- Sol / Base où les barres sont posées -->
+            <!-- Sol / Base ou les barres sont posees -->
             <div id="ground">
-                <!-- Les barres seront générées dynamiquement ici -->
+                <!-- Les barres seront generees dynamiquement ici -->
             </div>
         </div>
     </div>
@@ -70,16 +70,19 @@
     <!-- UI FIXE (Overlay)                            -->
     <!-- ============================================= -->
     <div id="game-ui">
-        <!-- Conteneur des gouttes (pays hors écran) -->
+        <!-- Conteneur des gouttes (pays hors ecran) -->
         <div id="drops-container">
-            <!-- Les gouttes seront générées dynamiquement -->
+            <!-- Les gouttes seront generees dynamiquement -->
         </div>
 
-        <!-- Indicateur du leader -->
+        <!-- Indicateur du leader avec sous-titre -->
         <div id="leader-indicator">
-            <span class="leader-crown">👑</span>
-            <span id="leader-name">-</span>
-            <span id="leader-score">0</span>
+            <div class="leader-main">
+                <span class="leader-crown">👑</span>
+                <span id="leader-name">-</span>
+                <span id="leader-score">0</span>
+            </div>
+            <div class="leader-subtitle">Qui va gagner la CAN !</div>
         </div>
     </div>
 
