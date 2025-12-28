@@ -347,6 +347,45 @@ app.get('/api/live', (req, res) => {
     });
 });
 
+// API: Tester le bot Twitter (protégé par clé secrète)
+app.get('/api/twitter/test', async (req, res) => {
+    const secretKey = req.query.key;
+    const expectedKey = process.env.TWITTER_TEST_KEY || 'test123';
+
+    // Protection basique pour éviter les abus
+    if (secretKey !== expectedKey) {
+        return res.status(403).json({ error: 'Clé invalide' });
+    }
+
+    if (!twitterEnabled) {
+        return res.json({
+            success: false,
+            message: 'Bot Twitter inactif - Variables d\'environnement manquantes',
+            config: {
+                TWITTER_CLIENT_KEY: !!process.env.TWITTER_CLIENT_KEY,
+                TWITTER_CLIENT_SECRET: !!process.env.TWITTER_CLIENT_SECRET,
+                TWITTER_ACCESS_TOKEN: !!process.env.TWITTER_ACCESS_TOKEN,
+                TWITTER_ACCESS_SECRET: !!process.env.TWITTER_ACCESS_SECRET,
+                PUBLIC_SITE_URL: process.env.PUBLIC_SITE_URL || '(non défini)'
+            }
+        });
+    }
+
+    try {
+        await postTwitterUpdate();
+        res.json({
+            success: true,
+            message: 'Tweet envoyé avec succès !'
+        });
+    } catch (error) {
+        res.json({
+            success: false,
+            message: 'Erreur lors de l\'envoi',
+            error: error.message
+        });
+    }
+});
+
 // ============================================================
 // LOGIQUE SOCKET.IO - TEMPS RÉEL
 // ============================================================
