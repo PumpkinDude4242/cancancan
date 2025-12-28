@@ -11,48 +11,13 @@
   },
   "teams": [
     {
-      "id": "civ",
-      "name": "Côte d'Ivoire",
-      "shortName": "CIV",
-      "emoji": "🇨🇮",
-      "color": "#FF8200",
-      "colors": ["#FF8200", "#FFFFFF", "#009A44"],
-      "active": true
-    },
-    {
-      "id": "nga",
-      "name": "Nigeria",
-      "shortName": "NGA",
-      "emoji": "🇳🇬",
-      "color": "#008751",
-      "colors": ["#008751", "#FFFFFF", "#008751"],
-      "active": true
-    },
-    {
       "id": "mar",
       "name": "Maroc",
       "shortName": "MAR",
       "emoji": "🇲🇦",
       "color": "#C1272D",
       "colors": ["#C1272D", "#006233", "#C1272D"],
-      "active": true
-    },
-    {
-      "id": "sen",
-      "name": "Sénégal",
-      "shortName": "SEN",
-      "emoji": "🇸🇳",
-      "color": "#00853F",
-      "colors": ["#00853F", "#FDEF42", "#E31B23"],
-      "active": true
-    },
-    {
-      "id": "egy",
-      "name": "Égypte",
-      "shortName": "EGY",
-      "emoji": "🇪🇬",
-      "color": "#CE1126",
-      "colors": ["#CE1126", "#FFFFFF", "#000000"],
+      "flagUrl": "/assets/flags/mar.png",
       "active": true
     },
     {
@@ -62,51 +27,7 @@
       "emoji": "🇩🇿",
       "color": "#006233",
       "colors": ["#006233", "#FFFFFF", "#D21034"],
-      "active": true
-    },
-    {
-      "id": "cmr",
-      "name": "Cameroun",
-      "shortName": "CMR",
-      "emoji": "🇨🇲",
-      "color": "#007A5E",
-      "colors": ["#007A5E", "#CE1126", "#FCD116"],
-      "active": true
-    },
-    {
-      "id": "gha",
-      "name": "Ghana",
-      "shortName": "GHA",
-      "emoji": "🇬🇭",
-      "color": "#EF3340",
-      "colors": ["#EF3340", "#FCD116", "#006B3F"],
-      "active": true
-    },
-    {
-      "id": "tun",
-      "name": "Tunisie",
-      "shortName": "TUN",
-      "emoji": "🇹🇳",
-      "color": "#E70013",
-      "colors": ["#E70013", "#FFFFFF", "#E70013"],
-      "active": true
-    },
-    {
-      "id": "mli",
-      "name": "Mali",
-      "shortName": "MLI",
-      "emoji": "🇲🇱",
-      "color": "#14B53A",
-      "colors": ["#14B53A", "#FCD116", "#CE1126"],
-      "active": true
-    },
-    {
-      "id": "cod",
-      "name": "RD Congo",
-      "shortName": "COD",
-      "emoji": "🇨🇩",
-      "color": "#007FFF",
-      "colors": ["#007FFF", "#F7D618", "#CE1021"],
+      "flagUrl": "/assets/flags/alg.png",
       "active": true
     },
     {
@@ -116,6 +37,37 @@
       "emoji": "🇿🇦",
       "color": "#007A4D",
       "colors": ["#007A4D", "#FFB612", "#DE3831"],
+      "flagUrl": "/assets/flags/rsa.png",
+      "active": true
+    },
+    {
+      "id": "ago",
+      "name": "Angola",
+      "shortName": "AGO",
+      "emoji": "🇦🇴",
+      "color": "#CC092F",
+      "colors": ["#CC092F", "#000000", "#FFCB00"],
+      "flagUrl": "/assets/flags/ago.png",
+      "active": true
+    },
+    {
+      "id": "ben",
+      "name": "Bénin",
+      "shortName": "BEN",
+      "emoji": "🇧🇯",
+      "color": "#008751",
+      "colors": ["#008751", "#FCD116", "#E8112D"],
+      "flagUrl": "/assets/flags/ben.png",
+      "active": true
+    },
+    {
+      "id": "bot",
+      "name": "Botswana",
+      "shortName": "BOT",
+      "emoji": "🇧🇼",
+      "color": "#75AADB",
+      "colors": ["#75AADB", "#000000", "#FFFFFF"],
+      "flagUrl": "/assets/flags/bot.png",
       "active": true
     },
     {
@@ -125,69 +77,77 @@
       "emoji": "🇧🇫",
       "color": "#EF2B2D",
       "colors": ["#EF2B2D", "#009E49", "#FCD116"],
+      "flagUrl": "/assets/flags/bfa.png",
       "active": true
     },
     {
-      "id": "gui",
-      "name": "Guinée",
-      "shortName": "GUI",
-      "emoji": "🇬🇳",
+      "id": "cmr",
+      "name": "Cameroun",
+      "shortName": "CMR",
+      "emoji": "🇨🇲",
+      "color": "#007A5E",
+      "colors": ["#007A5E", "#CE1126", "#FCD116"],
+      "flagUrl": "/assets/flags/cmr.png",
+      "active": true
+    },
+    {
+      "id": "com",
+      "name": "Comores",
+      "shortName": "COM",
+      "emoji": "🇰🇲",
+      "color": "#3A75C4",
+      "colors": ["#3A75C4", "#FFC61E", "#CE1126"],
+      "flagUrl": "/assets/flags/com.png",
+      "active": true
+    },
+    {
+      "id": "civ",
+      "name": "Côte d'Ivoire",
+      "shortName": "CIV",
+      "emoji": "🇨🇮",
+      "color": "#FF8200",
+      "colors": ["#FF8200", "#FFFFFF", "#009A44"],
+      "flagUrl": "/assets/flags/civ.png",
+      "active": true
+    },
+    {
+      "id": "egy",
+      "name": "Égypte",
+      "shortName": "EGY",
+      "emoji": "🇪🇬",
       "color": "#CE1126",
-      "colors": ["#CE1126", "#FCD116", "#009460"],
+      "colors": ["#CE1126", "#FFFFFF", "#000000"],
+      "flagUrl": "/assets/flags/egy.png",
       "active": true
     },
     {
-      "id": "gnb",
-      "name": "Guinée-Bissau",
-      "shortName": "GNB",
-      "emoji": "🇬🇼",
-      "color": "#CE1126",
-      "colors": ["#CE1126", "#FCD116", "#009739"],
+      "id": "gab",
+      "name": "Gabon",
+      "shortName": "GAB",
+      "emoji": "🇬🇦",
+      "color": "#009E60",
+      "colors": ["#009E60", "#FCD116", "#3A75C4"],
+      "flagUrl": "/assets/flags/gab.png",
       "active": true
     },
     {
-      "id": "gam",
-      "name": "Gambie",
-      "shortName": "GAM",
-      "emoji": "🇬🇲",
-      "color": "#CE1126",
-      "colors": ["#CE1126", "#0C1C8C", "#3A7728"],
-      "active": true
-    },
-    {
-      "id": "cpv",
-      "name": "Cap-Vert",
-      "shortName": "CPV",
-      "emoji": "🇨🇻",
-      "color": "#003893",
-      "colors": ["#003893", "#CF2027", "#F7D116"],
-      "active": true
-    },
-    {
-      "id": "eqg",
-      "name": "Guinée Équatoriale",
-      "shortName": "EQG",
+      "id": "gnq",
+      "name": "Guinée-Équatoriale",
+      "shortName": "GNQ",
       "emoji": "🇬🇶",
       "color": "#3E9A00",
       "colors": ["#3E9A00", "#FFFFFF", "#E32118"],
+      "flagUrl": "/assets/flags/gnq.png",
       "active": true
     },
     {
-      "id": "ang",
-      "name": "Angola",
-      "shortName": "ANG",
-      "emoji": "🇦🇴",
-      "color": "#CC092F",
-      "colors": ["#CC092F", "#000000", "#FFCB00"],
-      "active": true
-    },
-    {
-      "id": "nam",
-      "name": "Namibie",
-      "shortName": "NAM",
-      "emoji": "🇳🇦",
-      "color": "#003580",
-      "colors": ["#003580", "#009543", "#D21034"],
+      "id": "mli",
+      "name": "Mali",
+      "shortName": "MLI",
+      "emoji": "🇲🇱",
+      "color": "#14B53A",
+      "colors": ["#14B53A", "#FCD116", "#CE1126"],
+      "flagUrl": "/assets/flags/mli.png",
       "active": true
     },
     {
@@ -197,15 +157,57 @@
       "emoji": "🇲🇿",
       "color": "#007168",
       "colors": ["#007168", "#FCE100", "#D21034"],
+      "flagUrl": "/assets/flags/moz.png",
       "active": true
     },
     {
-      "id": "zam",
-      "name": "Zambie",
-      "shortName": "ZAM",
-      "emoji": "🇿🇲",
-      "color": "#198A00",
-      "colors": ["#198A00", "#EF7D00", "#DE2010"],
+      "id": "nga",
+      "name": "Nigéria",
+      "shortName": "NGA",
+      "emoji": "🇳🇬",
+      "color": "#008751",
+      "colors": ["#008751", "#FFFFFF", "#008751"],
+      "flagUrl": "/assets/flags/nga.png",
+      "active": true
+    },
+    {
+      "id": "uga",
+      "name": "Ouganda",
+      "shortName": "UGA",
+      "emoji": "🇺🇬",
+      "color": "#000000",
+      "colors": ["#000000", "#FCDC04", "#D90000"],
+      "flagUrl": "/assets/flags/uga.png",
+      "active": true
+    },
+    {
+      "id": "cod",
+      "name": "RD Congo",
+      "shortName": "COD",
+      "emoji": "🇨🇩",
+      "color": "#007FFF",
+      "colors": ["#007FFF", "#F7D618", "#CE1021"],
+      "flagUrl": "/assets/flags/cod.png",
+      "active": true
+    },
+    {
+      "id": "sen",
+      "name": "Sénégal",
+      "shortName": "SEN",
+      "emoji": "🇸🇳",
+      "color": "#00853F",
+      "colors": ["#00853F", "#FDEF42", "#E31B23"],
+      "flagUrl": "/assets/flags/sen.png",
+      "active": true
+    },
+    {
+      "id": "sdn",
+      "name": "Soudan",
+      "shortName": "SDN",
+      "emoji": "🇸🇩",
+      "color": "#D21034",
+      "colors": ["#D21034", "#FFFFFF", "#007229"],
+      "flagUrl": "/assets/flags/sdn.png",
       "active": true
     },
     {
@@ -215,114 +217,136 @@
       "emoji": "🇹🇿",
       "color": "#1EB53A",
       "colors": ["#1EB53A", "#00A3DD", "#FCD116"],
+      "flagUrl": "/assets/flags/tan.png",
       "active": true
     },
     {
-      "id": "mrt",
-      "name": "Mauritanie",
-      "shortName": "MRT",
-      "emoji": "🇲🇷",
-      "color": "#00A95C",
-      "colors": ["#00A95C", "#FFD700", "#00A95C"],
+      "id": "tun",
+      "name": "Tunisie",
+      "shortName": "TUN",
+      "emoji": "🇹🇳",
+      "color": "#E70013",
+      "colors": ["#E70013", "#FFFFFF", "#E70013"],
+      "flagUrl": "/assets/flags/tun.png",
+      "active": true
+    },
+    {
+      "id": "zam",
+      "name": "Zambie",
+      "shortName": "ZAM",
+      "emoji": "🇿🇲",
+      "color": "#198A00",
+      "colors": ["#198A00", "#EF7D00", "#DE2010"],
+      "flagUrl": "/assets/flags/zam.png",
+      "active": true
+    },
+    {
+      "id": "zim",
+      "name": "Zimbabwe",
+      "shortName": "ZIM",
+      "emoji": "🇿🇼",
+      "color": "#006400",
+      "colors": ["#006400", "#FFD200", "#D40000"],
+      "flagUrl": "/assets/flags/zim.png",
       "active": true
     }
   ],
   "matches": [
     {
       "id": "match_001",
-      "teamA": "civ",
-      "teamB": "gnb",
-      "startTime": "2025-01-13T20:00:00Z",
-      "endTime": "2025-01-13T22:00:00Z",
+      "teamA": "mar",
+      "teamB": "com",
+      "startTime": "2025-12-21T20:00:00Z",
+      "endTime": "2025-12-21T22:00:00Z",
       "stage": "Groupe A"
     },
     {
       "id": "match_002",
-      "teamA": "nga",
-      "teamB": "eqg",
-      "startTime": "2025-01-14T17:00:00Z",
-      "endTime": "2025-01-14T19:00:00Z",
+      "teamA": "mli",
+      "teamB": "zam",
+      "startTime": "2025-12-21T17:00:00Z",
+      "endTime": "2025-12-21T19:00:00Z",
       "stage": "Groupe A"
     },
     {
       "id": "match_003",
       "teamA": "egy",
-      "teamB": "moz",
-      "startTime": "2025-01-14T20:00:00Z",
-      "endTime": "2025-01-14T22:00:00Z",
+      "teamB": "zim",
+      "startTime": "2025-12-22T20:00:00Z",
+      "endTime": "2025-12-22T22:00:00Z",
       "stage": "Groupe B"
     },
     {
       "id": "match_004",
-      "teamA": "gha",
-      "teamB": "cpv",
-      "startTime": "2025-01-15T14:00:00Z",
-      "endTime": "2025-01-15T16:00:00Z",
+      "teamA": "rsa",
+      "teamB": "uga",
+      "startTime": "2025-12-22T17:00:00Z",
+      "endTime": "2025-12-22T19:00:00Z",
       "stage": "Groupe B"
     },
     {
       "id": "match_005",
-      "teamA": "sen",
-      "teamB": "gam",
-      "startTime": "2025-01-15T17:00:00Z",
-      "endTime": "2025-01-15T19:00:00Z",
+      "teamA": "nga",
+      "teamB": "ben",
+      "startTime": "2025-12-23T20:00:00Z",
+      "endTime": "2025-12-23T22:00:00Z",
       "stage": "Groupe C"
     },
     {
       "id": "match_006",
-      "teamA": "cmr",
-      "teamB": "gui",
-      "startTime": "2025-01-15T20:00:00Z",
-      "endTime": "2025-01-15T22:00:00Z",
+      "teamA": "alg",
+      "teamB": "gnq",
+      "startTime": "2025-12-23T17:00:00Z",
+      "endTime": "2025-12-23T19:00:00Z",
       "stage": "Groupe C"
     },
     {
       "id": "match_007",
-      "teamA": "alg",
-      "teamB": "ang",
-      "startTime": "2025-01-16T14:00:00Z",
-      "endTime": "2025-01-16T16:00:00Z",
+      "teamA": "sen",
+      "teamB": "bot",
+      "startTime": "2025-12-24T20:00:00Z",
+      "endTime": "2025-12-24T22:00:00Z",
       "stage": "Groupe D"
     },
     {
       "id": "match_008",
-      "teamA": "bfa",
-      "teamB": "mrt",
-      "startTime": "2025-01-16T17:00:00Z",
-      "endTime": "2025-01-16T19:00:00Z",
+      "teamA": "cod",
+      "teamB": "tan",
+      "startTime": "2025-12-24T17:00:00Z",
+      "endTime": "2025-12-24T19:00:00Z",
       "stage": "Groupe D"
     },
     {
       "id": "match_009",
-      "teamA": "mar",
-      "teamB": "tan",
-      "startTime": "2025-01-16T20:00:00Z",
-      "endTime": "2025-01-16T22:00:00Z",
-      "stage": "Groupe F"
+      "teamA": "civ",
+      "teamB": "moz",
+      "startTime": "2025-12-25T20:00:00Z",
+      "endTime": "2025-12-25T22:00:00Z",
+      "stage": "Groupe E"
     },
     {
       "id": "match_010",
-      "teamA": "cod",
-      "teamB": "zam",
-      "startTime": "2025-01-17T17:00:00Z",
-      "endTime": "2025-01-17T19:00:00Z",
-      "stage": "Groupe F"
+      "teamA": "cmr",
+      "teamB": "gab",
+      "startTime": "2025-12-25T17:00:00Z",
+      "endTime": "2025-12-25T19:00:00Z",
+      "stage": "Groupe E"
     },
     {
       "id": "match_011",
       "teamA": "tun",
-      "teamB": "nam",
-      "startTime": "2025-01-17T20:00:00Z",
-      "endTime": "2025-01-17T22:00:00Z",
-      "stage": "Groupe E"
+      "teamB": "sdn",
+      "startTime": "2025-12-26T20:00:00Z",
+      "endTime": "2025-12-26T22:00:00Z",
+      "stage": "Groupe F"
     },
     {
       "id": "match_012",
-      "teamA": "mli",
-      "teamB": "rsa",
-      "startTime": "2025-01-18T17:00:00Z",
-      "endTime": "2025-01-18T19:00:00Z",
-      "stage": "Groupe E"
+      "teamA": "bfa",
+      "teamB": "ago",
+      "startTime": "2025-12-26T17:00:00Z",
+      "endTime": "2025-12-26T19:00:00Z",
+      "stage": "Groupe F"
     }
   ]
 }
