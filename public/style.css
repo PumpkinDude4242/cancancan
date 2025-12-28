@@ -573,15 +573,7 @@ body[data-background="moon"]::after {
     white-space: nowrap;
 }
 
-/* Animation flottante des gouttes */
-.team-drop.visible {
-    animation: dropBounce 2s ease-in-out infinite;
-}
-
-@keyframes dropBounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
-}
+/* Gouttes visibles - pas d'animation pour éviter les vibrations */
 
 /* Goutte match en direct */
 .team-drop.live-match::before {
@@ -611,12 +603,7 @@ body[data-background="moon"]::after {
 
 .leader-crown {
     font-size: 20px;
-    animation: crownBounce 1s ease-in-out infinite;
-}
-
-@keyframes crownBounce {
-    0%, 100% { transform: translateY(0) rotate(-5deg); }
-    50% { transform: translateY(-3px) rotate(5deg); }
+    /* Pas d'animation pour éviter les vibrations */
 }
 
 #leader-name {
