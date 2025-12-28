@@ -1,220 +1,230 @@
 {
+  "settings": {
+    "click_multiplier": 10,
+    "comboThreshold": 5,
+    "scoreThresholds": {
+      "stadium": 0,
+      "sky": 10000,
+      "space": 50000,
+      "moon": 100000
+    }
+  },
   "teams": [
     {
       "id": "civ",
       "name": "Côte d'Ivoire",
       "shortName": "CIV",
       "emoji": "🇨🇮",
+      "color": "#FF8200",
       "colors": ["#FF8200", "#FFFFFF", "#009A44"],
-      "flagUrl": "/assets/flags/civ.png",
-      "clickSound": "/assets/sounds/civ.mp3"
+      "active": true
     },
     {
       "id": "nga",
       "name": "Nigeria",
       "shortName": "NGA",
       "emoji": "🇳🇬",
+      "color": "#008751",
       "colors": ["#008751", "#FFFFFF", "#008751"],
-      "flagUrl": "/assets/flags/nga.png",
-      "clickSound": "/assets/sounds/nga.mp3"
+      "active": true
     },
     {
       "id": "mar",
       "name": "Maroc",
       "shortName": "MAR",
       "emoji": "🇲🇦",
+      "color": "#C1272D",
       "colors": ["#C1272D", "#006233", "#C1272D"],
-      "flagUrl": "/assets/flags/mar.png",
-      "clickSound": "/assets/sounds/mar.mp3"
+      "active": true
     },
     {
       "id": "sen",
       "name": "Sénégal",
       "shortName": "SEN",
       "emoji": "🇸🇳",
+      "color": "#00853F",
       "colors": ["#00853F", "#FDEF42", "#E31B23"],
-      "flagUrl": "/assets/flags/sen.png",
-      "clickSound": "/assets/sounds/sen.mp3"
+      "active": true
     },
     {
       "id": "egy",
       "name": "Égypte",
       "shortName": "EGY",
       "emoji": "🇪🇬",
+      "color": "#CE1126",
       "colors": ["#CE1126", "#FFFFFF", "#000000"],
-      "flagUrl": "/assets/flags/egy.png",
-      "clickSound": "/assets/sounds/egy.mp3"
+      "active": true
     },
     {
       "id": "alg",
       "name": "Algérie",
       "shortName": "ALG",
       "emoji": "🇩🇿",
+      "color": "#006233",
       "colors": ["#006233", "#FFFFFF", "#D21034"],
-      "flagUrl": "/assets/flags/alg.png",
-      "clickSound": "/assets/sounds/alg.mp3"
+      "active": true
     },
     {
       "id": "cmr",
       "name": "Cameroun",
       "shortName": "CMR",
       "emoji": "🇨🇲",
+      "color": "#007A5E",
       "colors": ["#007A5E", "#CE1126", "#FCD116"],
-      "flagUrl": "/assets/flags/cmr.png",
-      "clickSound": "/assets/sounds/cmr.mp3"
+      "active": true
     },
     {
       "id": "gha",
       "name": "Ghana",
       "shortName": "GHA",
       "emoji": "🇬🇭",
+      "color": "#EF3340",
       "colors": ["#EF3340", "#FCD116", "#006B3F"],
-      "flagUrl": "/assets/flags/gha.png",
-      "clickSound": "/assets/sounds/gha.mp3"
+      "active": true
     },
     {
       "id": "tun",
       "name": "Tunisie",
       "shortName": "TUN",
       "emoji": "🇹🇳",
+      "color": "#E70013",
       "colors": ["#E70013", "#FFFFFF", "#E70013"],
-      "flagUrl": "/assets/flags/tun.png",
-      "clickSound": "/assets/sounds/tun.mp3"
+      "active": true
     },
     {
       "id": "mli",
       "name": "Mali",
       "shortName": "MLI",
       "emoji": "🇲🇱",
+      "color": "#14B53A",
       "colors": ["#14B53A", "#FCD116", "#CE1126"],
-      "flagUrl": "/assets/flags/mli.png",
-      "clickSound": "/assets/sounds/mli.mp3"
+      "active": true
     },
     {
       "id": "cod",
       "name": "RD Congo",
       "shortName": "COD",
       "emoji": "🇨🇩",
+      "color": "#007FFF",
       "colors": ["#007FFF", "#F7D618", "#CE1021"],
-      "flagUrl": "/assets/flags/cod.png",
-      "clickSound": "/assets/sounds/cod.mp3"
+      "active": true
     },
     {
       "id": "rsa",
       "name": "Afrique du Sud",
       "shortName": "RSA",
       "emoji": "🇿🇦",
+      "color": "#007A4D",
       "colors": ["#007A4D", "#FFB612", "#DE3831"],
-      "flagUrl": "/assets/flags/rsa.png",
-      "clickSound": "/assets/sounds/rsa.mp3"
+      "active": true
     },
     {
       "id": "bfa",
       "name": "Burkina Faso",
       "shortName": "BFA",
       "emoji": "🇧🇫",
+      "color": "#EF2B2D",
       "colors": ["#EF2B2D", "#009E49", "#FCD116"],
-      "flagUrl": "/assets/flags/bfa.png",
-      "clickSound": "/assets/sounds/bfa.mp3"
+      "active": true
     },
     {
       "id": "gui",
       "name": "Guinée",
       "shortName": "GUI",
       "emoji": "🇬🇳",
+      "color": "#CE1126",
       "colors": ["#CE1126", "#FCD116", "#009460"],
-      "flagUrl": "/assets/flags/gui.png",
-      "clickSound": "/assets/sounds/gui.mp3"
+      "active": true
     },
     {
       "id": "gnb",
       "name": "Guinée-Bissau",
       "shortName": "GNB",
       "emoji": "🇬🇼",
+      "color": "#CE1126",
       "colors": ["#CE1126", "#FCD116", "#009739"],
-      "flagUrl": "/assets/flags/gnb.png",
-      "clickSound": "/assets/sounds/gnb.mp3"
+      "active": true
     },
     {
       "id": "gam",
       "name": "Gambie",
       "shortName": "GAM",
       "emoji": "🇬🇲",
+      "color": "#CE1126",
       "colors": ["#CE1126", "#0C1C8C", "#3A7728"],
-      "flagUrl": "/assets/flags/gam.png",
-      "clickSound": "/assets/sounds/gam.mp3"
+      "active": true
     },
     {
       "id": "cpv",
       "name": "Cap-Vert",
       "shortName": "CPV",
       "emoji": "🇨🇻",
+      "color": "#003893",
       "colors": ["#003893", "#CF2027", "#F7D116"],
-      "flagUrl": "/assets/flags/cpv.png",
-      "clickSound": "/assets/sounds/cpv.mp3"
+      "active": true
     },
     {
       "id": "eqg",
       "name": "Guinée Équatoriale",
       "shortName": "EQG",
       "emoji": "🇬🇶",
+      "color": "#3E9A00",
       "colors": ["#3E9A00", "#FFFFFF", "#E32118"],
-      "flagUrl": "/assets/flags/eqg.png",
-      "clickSound": "/assets/sounds/eqg.mp3"
+      "active": true
     },
     {
       "id": "ang",
       "name": "Angola",
       "shortName": "ANG",
       "emoji": "🇦🇴",
+      "color": "#CC092F",
       "colors": ["#CC092F", "#000000", "#FFCB00"],
-      "flagUrl": "/assets/flags/ang.png",
-      "clickSound": "/assets/sounds/ang.mp3"
+      "active": true
     },
     {
       "id": "nam",
       "name": "Namibie",
       "shortName": "NAM",
       "emoji": "🇳🇦",
+      "color": "#003580",
       "colors": ["#003580", "#009543", "#D21034"],
-      "flagUrl": "/assets/flags/nam.png",
-      "clickSound": "/assets/sounds/nam.mp3"
+      "active": true
     },
     {
       "id": "moz",
       "name": "Mozambique",
       "shortName": "MOZ",
       "emoji": "🇲🇿",
+      "color": "#007168",
       "colors": ["#007168", "#FCE100", "#D21034"],
-      "flagUrl": "/assets/flags/moz.png",
-      "clickSound": "/assets/sounds/moz.mp3"
+      "active": true
     },
     {
       "id": "zam",
       "name": "Zambie",
       "shortName": "ZAM",
       "emoji": "🇿🇲",
+      "color": "#198A00",
       "colors": ["#198A00", "#EF7D00", "#DE2010"],
-      "flagUrl": "/assets/flags/zam.png",
-      "clickSound": "/assets/sounds/zam.mp3"
+      "active": true
     },
     {
       "id": "tan",
       "name": "Tanzanie",
       "shortName": "TAN",
       "emoji": "🇹🇿",
+      "color": "#1EB53A",
       "colors": ["#1EB53A", "#00A3DD", "#FCD116"],
-      "flagUrl": "/assets/flags/tan.png",
-      "clickSound": "/assets/sounds/tan.mp3"
+      "active": true
     },
     {
       "id": "mrt",
       "name": "Mauritanie",
       "shortName": "MRT",
       "emoji": "🇲🇷",
+      "color": "#00A95C",
       "colors": ["#00A95C", "#FFD700", "#00A95C"],
-      "flagUrl": "/assets/flags/mrt.png",
-      "clickSound": "/assets/sounds/mrt.mp3"
+      "active": true
     }
   ],
   "matches": [
@@ -314,17 +324,5 @@
       "endTime": "2025-01-18T19:00:00Z",
       "stage": "Groupe E"
     }
-  ],
-  "settings": {
-    "staminaMaxClicks": 50,
-    "staminaRegenRate": 2,
-    "staminaCooldown": 3000,
-    "comboThreshold": 5,
-    "scoreThresholds": {
-      "stadium": 0,
-      "sky": 10000,
-      "space": 50000,
-      "moon": 100000
-    }
-  }
+  ]
 }

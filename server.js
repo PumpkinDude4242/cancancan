@@ -40,24 +40,34 @@ let scores = {}; // Stockage des scores en mémoire { teamId: score }
 let connectedUsers = 0;
 
 /**
- * Charge la configuration depuis config/data.json
- * Initialise les scores à 0 pour chaque équipe
+ * Charge la configuration depuis config/tournament_data.json
+ * Filtre les équipes actives et initialise les scores à 1
  */
 function loadGameData() {
     try {
-        const dataPath = path.join(__dirname, 'config', 'data.json');
+        const dataPath = path.join(__dirname, 'config', 'tournament_data.json');
         const rawData = fs.readFileSync(dataPath, 'utf8');
-        gameData = JSON.parse(rawData);
+        const rawGameData = JSON.parse(rawData);
 
-        // Initialiser les scores à 0 pour chaque équipe
+        // Filtrer uniquement les équipes actives
+        const activeTeams = rawGameData.teams.filter(team => team.active === true);
+
+        gameData = {
+            teams: activeTeams,
+            matches: rawGameData.matches,
+            settings: rawGameData.settings
+        };
+
+        // Initialiser les scores à 1 pour chaque équipe active (barre visible dès le départ)
         gameData.teams.forEach(team => {
-            scores[team.id] = 0;
+            scores[team.id] = 1;
         });
 
-        console.log(`✅ Configuration chargée: ${gameData.teams.length} équipes, ${gameData.matches.length} matchs`);
+        const eliminatedCount = rawGameData.teams.length - activeTeams.length;
+        console.log(`✅ Configuration chargée: ${activeTeams.length} équipes actives, ${eliminatedCount} éliminées, ${gameData.matches.length} matchs`);
         return true;
     } catch (error) {
-        console.error('❌ Erreur lors du chargement de data.json:', error.message);
+        console.error('❌ Erreur lors du chargement de tournament_data.json:', error.message);
         return false;
     }
 }

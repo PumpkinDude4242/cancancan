@@ -437,6 +437,17 @@ body[data-background="moon"]::after {
     font-size: 22px;
     filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
     margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bar-flag .flag-img {
+    width: 28px;
+    height: 20px;
+    object-fit: cover;
+    border-radius: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .bar-score {
@@ -536,6 +547,16 @@ body[data-background="moon"]::after {
     transform: translate(-50%, -50%) rotate(0deg);
     font-size: 18px;
     z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.drop-flag .flag-img {
+    width: 22px;
+    height: 16px;
+    object-fit: cover;
+    border-radius: 2px;
 }
 
 /* Score sous la goutte */
@@ -552,15 +573,7 @@ body[data-background="moon"]::after {
     white-space: nowrap;
 }
 
-/* Animation flottante des gouttes */
-.team-drop.visible {
-    animation: dropBounce 2s ease-in-out infinite;
-}
-
-@keyframes dropBounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
-}
+/* Gouttes visibles - pas d'animation pour éviter les vibrations */
 
 /* Goutte match en direct */
 .team-drop.live-match::before {
@@ -590,12 +603,7 @@ body[data-background="moon"]::after {
 
 .leader-crown {
     font-size: 20px;
-    animation: crownBounce 1s ease-in-out infinite;
-}
-
-@keyframes crownBounce {
-    0%, 100% { transform: translateY(0) rotate(-5deg); }
-    50% { transform: translateY(-3px) rotate(5deg); }
+    /* Pas d'animation pour éviter les vibrations */
 }
 
 #leader-name {

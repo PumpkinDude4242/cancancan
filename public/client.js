@@ -21,6 +21,9 @@ const Game = {
     connectedUsers: 0,
     backgroundLevel: 'stadium',
 
+    // Configuration visuelle
+    clickMultiplier: 10,      // Multiplicateur de hauteur visuelle (px par clic)
+
     // Système de caméra
     camera: {
         offsetY: 0,           // Décalage vertical actuel (positif = monte)
@@ -33,6 +36,9 @@ const Game = {
     clickHistory: [],         // Timestamps des derniers clics
     comboActive: false,
     comboThreshold: 5,        // Clics/seconde pour combo
+
+    // Cache des images de drapeaux (succès/échec)
+    flagImageCache: {},
 
     // Références DOM (cache)
     dom: {}
@@ -197,8 +203,12 @@ async function loadGameData() {
         Game.backgroundLevel = data.backgroundLevel;
         Game.connectedUsers = data.connectedUsers;
         Game.comboThreshold = data.settings?.comboThreshold || 5;
+        Game.clickMultiplier = data.settings?.click_multiplier || 10;
 
-        console.log(`✅ ${Game.teams.length} équipes chargées`);
+        console.log(`✅ ${Game.teams.length} équipes actives chargées (multiplier: ${Game.clickMultiplier})`);
+
+        // Précharger les images de drapeaux
+        preloadFlagImages();
 
         // Générer les barres et gouttes
         createBars();
@@ -213,6 +223,47 @@ async function loadGameData() {
     } catch (error) {
         console.error('❌ Erreur chargement:', error);
         showToast('Erreur de connexion', 'error');
+    }
+}
+
+/**
+ * Précharge les images de drapeaux et met en cache leur disponibilité
+ */
+function preloadFlagImages() {
+    Game.teams.forEach(team => {
+        const img = new Image();
+        img.onload = () => {
+            Game.flagImageCache[team.id] = true;
+            // Mettre à jour le drapeau si déjà rendu
+            updateFlagDisplay(team.id);
+        };
+        img.onerror = () => {
+            Game.flagImageCache[team.id] = false;
+        };
+        img.src = `/assets/flags/${team.id}.png`;
+    });
+}
+
+/**
+ * Met à jour l'affichage du drapeau (image ou emoji) pour une équipe
+ */
+function updateFlagDisplay(teamId) {
+    const team = Game.teams.find(t => t.id === teamId);
+    if (!team) return;
+
+    const bar = document.getElementById(`bar-${teamId}`);
+    const drop = document.getElementById(`drop-${teamId}`);
+
+    if (Game.flagImageCache[teamId]) {
+        const imgHtml = `<img src="/assets/flags/${teamId}.png" alt="${team.shortName}" class="flag-img">`;
+        if (bar) {
+            const flagEl = bar.querySelector('.bar-flag');
+            if (flagEl) flagEl.innerHTML = imgHtml;
+        }
+        if (drop) {
+            const flagEl = drop.querySelector('.drop-flag');
+            if (flagEl) flagEl.innerHTML = imgHtml;
+        }
     }
 }
 
@@ -408,11 +459,14 @@ function activateCombo() {
 
 /**
  * Calcule la hauteur d'une barre selon le score
+ * Utilise le click_multiplier du serveur pour un impact visuel satisfaisant
  */
 function calculateBarHeight(score) {
     const minHeight = 40;
-    const scaleFactor = 0.3; // px par point
-    const maxHeight = Game.camera.viewportHeight * 0.8;
+    // Utilise le click_multiplier pour un scaling visuel important
+    // click_multiplier = 10 signifie +10px par clic (très visible)
+    const scaleFactor = Game.clickMultiplier || 10;
+    const maxHeight = Game.camera.viewportHeight * 3; // Permet de monter très haut
 
     return Math.min(maxHeight, minHeight + score * scaleFactor);
 }
