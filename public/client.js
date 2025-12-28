@@ -276,21 +276,21 @@ function updateFlagDisplay(teamId) {
 // ============================================================
 
 /**
- * Extrait la couleur du bas de chaque drapeau
+ * Extrait le gradient du bas de chaque drapeau (ligne entiere de pixels)
  */
 async function extractAllFlagColors() {
-    console.log('🎨 Extraction des couleurs des drapeaux...');
+    console.log('🎨 Extraction des gradients des drapeaux...');
 
-    const promises = Game.teams.map(team => extractFlagBottomColor(team));
+    const promises = Game.teams.map(team => extractFlagBottomGradient(team));
     await Promise.all(promises);
 
-    console.log('✅ Couleurs extraites:', Game.trailColors);
+    console.log('✅ Gradients extraits:', Object.keys(Game.trailColors).length, 'equipes');
 }
 
 /**
- * Charge une image de drapeau et extrait la couleur moyenne de la derniere ligne
+ * Charge une image de drapeau et extrait la derniere ligne complete comme gradient
  */
-function extractFlagBottomColor(team) {
+function extractFlagBottomGradient(team) {
     return new Promise((resolve) => {
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -305,24 +305,29 @@ function extractFlagBottomColor(team) {
 
                 ctx.drawImage(img, 0, 0);
 
+                // Lire la derniere ligne de pixels
                 const bottomY = img.height - 1;
                 const imageData = ctx.getImageData(0, bottomY, img.width, 1);
                 const pixels = imageData.data;
 
-                const color = calculateDominantColor(pixels, img.width);
-                Game.trailColors[team.id] = color;
+                // Generer un gradient CSS horizontal base sur la ligne entiere
+                const gradient = generateGradientFromPixels(pixels, img.width);
+                Game.trailColors[team.id] = gradient;
 
-                console.log(`  🏳️ ${team.shortName}: ${color}`);
+                console.log(`  🏳️ ${team.shortName}: gradient genere`);
             } catch (e) {
                 console.warn(`⚠️ Impossible d'analyser ${team.id}, utilisation couleur fallback`);
-                Game.trailColors[team.id] = team.colors[2] || team.colors[0] || '#333333';
+                // Fallback: utiliser les couleurs du JSON comme gradient
+                const colors = team.colors || ['#333333'];
+                Game.trailColors[team.id] = createFallbackGradient(colors);
             }
             resolve();
         };
 
         img.onerror = () => {
             console.warn(`⚠️ Image non trouvee pour ${team.id}`);
-            Game.trailColors[team.id] = team.colors[2] || team.colors[0] || '#333333';
+            const colors = team.colors || ['#333333'];
+            Game.trailColors[team.id] = createFallbackGradient(colors);
             resolve();
         };
 
@@ -331,87 +336,81 @@ function extractFlagBottomColor(team) {
 }
 
 /**
- * Calcule la couleur dominante d'une ligne de pixels
+ * Genere un gradient CSS horizontal a partir d'une ligne de pixels
+ * Echantillonne la ligne pour creer des color-stops
  */
-function calculateDominantColor(pixels, width) {
-    let totalR = 0, totalG = 0, totalB = 0;
-    let count = 0;
+function generateGradientFromPixels(pixels, width) {
+    // Nombre de points d'echantillonnage (plus = plus precis mais plus lourd)
+    const samples = Math.min(width, 20);
+    const colorStops = [];
 
-    const colorCounts = {};
+    for (let i = 0; i < samples; i++) {
+        // Position dans la ligne (0 a width-1)
+        const pixelIndex = Math.floor((i / (samples - 1)) * (width - 1));
+        const dataIndex = pixelIndex * 4;
 
-    for (let i = 0; i < width * 4; i += 4) {
-        const r = pixels[i];
-        const g = pixels[i + 1];
-        const b = pixels[i + 2];
-        const a = pixels[i + 3];
+        const r = pixels[dataIndex];
+        const g = pixels[dataIndex + 1];
+        const b = pixels[dataIndex + 2];
+        const a = pixels[dataIndex + 3];
 
-        if (a < 128) continue;
+        // Si pixel transparent, utiliser noir
+        const color = a >= 128 ? rgbToHex(r, g, b) : '#1a1a2e';
 
-        const qR = Math.round(r / 32) * 32;
-        const qG = Math.round(g / 32) * 32;
-        const qB = Math.round(b / 32) * 32;
-        const key = `${qR},${qG},${qB}`;
+        // Position en pourcentage
+        const position = Math.round((i / (samples - 1)) * 100);
 
-        colorCounts[key] = (colorCounts[key] || 0) + 1;
-
-        totalR += r;
-        totalG += g;
-        totalB += b;
-        count++;
+        colorStops.push(`${color} ${position}%`);
     }
 
-    if (count === 0) {
-        return '#333333';
-    }
+    // Optimiser: fusionner les color-stops consecutifs de meme couleur
+    const optimizedStops = optimizeColorStops(colorStops);
 
-    let maxCount = 0;
-    let dominantKey = null;
+    return `linear-gradient(to right, ${optimizedStops.join(', ')})`;
+}
 
-    for (const [key, cnt] of Object.entries(colorCounts)) {
-        if (cnt > maxCount) {
-            maxCount = cnt;
-            dominantKey = key;
-        }
-    }
+/**
+ * Optimise les color-stops en fusionnant les couleurs consecutives identiques
+ */
+function optimizeColorStops(stops) {
+    if (stops.length <= 2) return stops;
 
-    if (dominantKey && maxCount > count * 0.3) {
-        const [qR, qG, qB] = dominantKey.split(',').map(Number);
+    const result = [];
+    let currentColor = null;
+    let startPos = null;
 
-        let preciseR = 0, preciseG = 0, preciseB = 0, preciseCount = 0;
+    stops.forEach((stop, index) => {
+        const [color, pos] = stop.split(' ');
 
-        for (let i = 0; i < width * 4; i += 4) {
-            const r = pixels[i];
-            const g = pixels[i + 1];
-            const b = pixels[i + 2];
-            const a = pixels[i + 3];
-
-            if (a < 128) continue;
-
-            const pqR = Math.round(r / 32) * 32;
-            const pqG = Math.round(g / 32) * 32;
-            const pqB = Math.round(b / 32) * 32;
-
-            if (pqR === qR && pqG === qG && pqB === qB) {
-                preciseR += r;
-                preciseG += g;
-                preciseB += b;
-                preciseCount++;
+        if (color !== currentColor) {
+            // Nouvelle couleur - ajouter la fin de la precedente et le debut de la nouvelle
+            if (currentColor !== null && startPos !== pos) {
+                result.push(`${currentColor} ${pos}`);
             }
+            result.push(stop);
+            currentColor = color;
+            startPos = pos;
+        } else if (index === stops.length - 1) {
+            // Derniere couleur - ajouter la position finale
+            result.push(stop);
         }
+    });
 
-        if (preciseCount > 0) {
-            const avgR = Math.round(preciseR / preciseCount);
-            const avgG = Math.round(preciseG / preciseCount);
-            const avgB = Math.round(preciseB / preciseCount);
-            return rgbToHex(avgR, avgG, avgB);
-        }
+    return result;
+}
+
+/**
+ * Cree un gradient fallback a partir des couleurs du JSON
+ */
+function createFallbackGradient(colors) {
+    if (colors.length === 1) {
+        return colors[0];
     }
-
-    const avgR = Math.round(totalR / count);
-    const avgG = Math.round(totalG / count);
-    const avgB = Math.round(totalB / count);
-
-    return rgbToHex(avgR, avgG, avgB);
+    if (colors.length === 2) {
+        return `linear-gradient(to right, ${colors[0]} 0%, ${colors[0]} 50%, ${colors[1]} 50%, ${colors[1]} 100%)`;
+    }
+    // 3 couleurs = bandes verticales egales
+    return `linear-gradient(to right, ${colors[0]} 0%, ${colors[0]} 33%, ${colors[1]} 33%, ${colors[1]} 67%, ${colors[2]} 67%, ${colors[2]} 100%)`;
 }
 
 /**
