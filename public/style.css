@@ -352,52 +352,83 @@ body[data-background="moon"]::after {
     -webkit-touch-callout: none;
     /* Couleur de trainee par defaut (sera surchargee par JS) */
     --trail-color: #333333;
+    /* Pas de padding/margin pour alignement parfait */
+    padding: 0;
+    margin: 0;
 }
 
-/* Conteneur principal avec bords arrondis */
+/* Conteneur principal avec bords arrondis - PILULE */
 .bar-container {
     position: relative;
     width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
+    /* Bords arrondis uniquement sur le conteneur parent */
     border-radius: var(--bar-radius) var(--bar-radius) 0 0;
+    /* CRITIQUE: overflow hidden pour que les enfants ne debordent pas */
     overflow: hidden;
+    /* Pas de padding interne */
+    padding: 0;
+    margin: 0;
     /* Ombre portee subtile */
     box-shadow:
         0 4px 15px rgba(0, 0, 0, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-/* Partie superieure : Le Drapeau */
+/* Partie superieure : Le Drapeau (flag-top) */
 .bar-flag-section {
+    /* Largeur 100% identique a la trainee */
     width: 100%;
     height: var(--flag-height);
     flex-shrink: 0;
     position: relative;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    /* Bordure subtile pour separer du trail */
-    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+    /* Pas de padding/margin pour alignement parfait avec la trainee */
+    padding: 0;
+    margin: 0;
+    /* Pas de bordure qui pourrait creer un decalage */
+    border: none;
+    /* Le drapeau remplit tout l'espace */
+    overflow: hidden;
 }
 
-/* Image du drapeau */
+/* Image du drapeau - display block pour eviter marges fantomes */
 .bar-flag-img {
+    /* Occupe exactement 100% du conteneur parent */
     width: 100%;
     height: 100%;
+    /* Cover pour remplir sans deformation */
     object-fit: cover;
+    object-position: center;
+    /* CRITIQUE: display block pour eviter l'espace sous l'image */
     display: block;
+    /* Pas de bordures/marges */
+    border: none;
+    padding: 0;
+    margin: 0;
+    /* Pas de border-radius ici, gere par le parent */
+    border-radius: 0;
 }
 
-/* Partie inferieure : La Trainee (gradient horizontal = derniere ligne du drapeau etiree) */
+/* Partie inferieure : La Trainee (flag-bottom) - gradient = derniere ligne du drapeau */
 .bar-trail-section {
-    flex: 1;
+    /* Largeur 100% identique au drapeau */
     width: 100%;
+    flex: 1;
+    /* Gradient horizontal genere par JS */
     background: var(--trail-color);
+    /* S'assurer que le gradient s'etire sur toute la largeur */
     background-size: 100% 100%;
+    background-repeat: no-repeat;
     position: relative;
     min-height: 20px;
+    /* Pas de padding/margin pour alignement parfait */
+    padding: 0;
+    margin: 0;
+    border: none;
+    /* Pas de border-radius ici, gere par le parent */
+    border-radius: 0;
 }
 
 /* Effet glossy global sur toute la barre */
